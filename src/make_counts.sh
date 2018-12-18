@@ -83,7 +83,7 @@ fi
 
 mutation_counts_file=$mutation_counts_path/$tumor_id.${tumor_part}phi.txt
 mutation_types_file=$mutation_types_path/$tumor_id.${tumor_part}mut_types.txt
-mutation_quadraticp_file=$mutation_counts_path/$tumor_id.${tumor_part}mut_quadraticp.txt
+mutation_quadraticp_file=$mutation_counts_path/$tumor_id.${tumor_part}quadraticp.txt
 mut_order_file=$mut_order_path/$tumor_id.${tumor_part}mut_order.txt
 
 if [ ! -f $mutation_types_file ] || [ ! -s  $mutation_types_file ]; then
@@ -139,6 +139,7 @@ if [ "$do_bootstrap" = true ] ; then
    for i in `seq 1 $N_BOOTSTRAPS`; do
 	mutation_bootstrap_file=$bootstrap_dir/$tumor_id.${tumor_part}$i.mut.txt
 	mutation_bootstrap_counts_file=$bootstrap_dir/$tumor_id.${tumor_part}$i.mut_counts.txt
+	mutation_bootstrap_quadraticp_file=$bootstrap_dir/$tumor_id.${tumor_part}$i.quadraticp.txt
 	
 	mutation_bootstrap_file_unsorted=$bootstrap_dir/$tumor_id.${tumor_part}$i.mut.unsorted.txt
 	mutation_bootstrap_counts_file_unsorted=$bootstrap_dir/$tumor_id.${tumor_part}$i.mut_counts.unsorted.txt
@@ -160,7 +161,8 @@ if [ "$do_bootstrap" = true ] ; then
 			# echo "Bootstrap counts..."
 			for t in `seq 1 $num_hundreds`; do
 				if [ $num_mutations -ge $((t*100-1)) ]; then
-					python $make_hundreds_script $mutation_bootstrap_file  $((t*100-100)) $((t*100-1)) >> $mutation_bootstrap_counts_file #2>>$log_dir/log.txt
+					python $make_hundreds_script $mutation_types_file  $((t*100-100)) $((t*100-1)) |\
+					awk '{split($0, line, ";"); print line[1] >> out1; print line[2] >> out2}'  out1="$mutation_bootstrap_counts_file" out2="$mutation_bootstrap_quadraticp_file" 
 					rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 				fi
 			done
