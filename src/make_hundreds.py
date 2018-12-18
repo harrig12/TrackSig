@@ -33,6 +33,7 @@ if __name__ == "__main__":
 						counts[key] = 0
 
 	sum_phis = 0
+	sum_squ_phis = 0
 
 	with open(file, 'r') as mut_types:
 		for i, line in enumerate(mut_types):
@@ -45,6 +46,7 @@ if __name__ == "__main__":
 			
 			counts[ref + "_" + alt + "_" + context] += 1
 			sum_phis += float(phi)
+			sum_squ_phis += float(phi) ** 2
 
 	assert(sum(counts.values()) == max(0,end - start + 1))
 	
@@ -55,4 +57,13 @@ if __name__ == "__main__":
 	for mutation in sorted(counts.keys()):
 		print(str(counts[mutation]) + "\t", end="")
 
+	#append sum square phis to output - use delim ";"
+	print(";", end="")
+	print(sum_squ_phis, end="")
+
 	print("")
+
+
+
+
+

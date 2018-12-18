@@ -5,7 +5,7 @@
 vcf_file=$1 # Path to directory with vcf files
 phi_file=$2 # Path to directory with phi.txt files produces by cals_ssm_phis.py
 
-mutation_counts_path="data/counts/" # Path where to write the mutation counts
+mutation_counts_path="data/counts/" # Path where to write the mutation counts and sum of quadratic phis 
 mut_order_path="data/mut_order/" # Path where to write mutation ordering (list of mutations sorted by phi). Needed to run get_clusters_at_timepoints.R. get_clusters_at_timepoints.R   composes list of tree node assignments for chunks of 100 mutations (prevalent tree node assignments at this time point)
 mutation_types_path="data/mut_types/" # Path where to write files listing mutation type (out of 96 trinucleotide-based types) for each mutation in vcf file sorted by phi
 mutation_bootstrap_path="data/bootstrap/" # Path where to write bootstrapped mutation counts
@@ -82,7 +82,8 @@ exit
 fi
 
 mutation_counts_file=$mutation_counts_path/$tumor_id.${tumor_part}phi.txt
-mutation_types_file=$mutation_types_path/$tumor_id.${tumor_part}mut_types.txt	
+mutation_types_file=$mutation_types_path/$tumor_id.${tumor_part}mut_types.txt
+mutation_quadraticp_file=$mutation_counts_path/$tumor_id.${tumor_part}mut_quadraticp.txt
 mut_order_file=$mut_order_path/$tumor_id.${tumor_part}mut_order.txt
 
 if [ ! -f $mutation_types_file ] || [ ! -s  $mutation_types_file ]; then
@@ -110,7 +111,8 @@ if [ ! -f $mutation_counts_file ]; then
 			for i in `seq 1 $num_hundreds`; do
 			if [ $num_mutations -ge $((i*100-1)) ]; then 
 					###echo $i $((i*100-1))
-				python $make_hundreds_script $mutation_types_file  $((i*100-100)) $((i*100-1)) >> $mutation_counts_file #2>>$log_dir/log.txt
+				python $make_hundreds_script $mutation_types_file  $((i*100-100)) $((i*100-1)) |\
+				awk '{split($0, line, ";"); print line[1] >> out1; print line[2] >> out2}'  out1="$mutation_counts_file" out2="$mutation_quadraticp_file" 
 				rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 				fi
 		done
