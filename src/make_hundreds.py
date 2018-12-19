@@ -51,6 +51,7 @@ if __name__ == "__main__":
 	assert(sum(counts.values()) == max(0,end - start + 1))
 	
 	mean_phi = sum_phis / (end - start + 1)
+	mean_squ_phi = sum_squ_phis / (end - start + 1)
 
 	print(file + "\t", end="")
 	print(str(mean_phi) + "\t", end="")
@@ -59,7 +60,7 @@ if __name__ == "__main__":
 
 	#append sum square phis to output - use delim ";"
 	print(";", end="")
-	print(sum_squ_phis, end="")
+	print(mean_squ_phis, end="")
 
 	print("")
 
