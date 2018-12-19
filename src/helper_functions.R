@@ -364,8 +364,10 @@ extract_data_for_example <- function (example, dir_counts, tumortypes, dir_resul
   #example <- "1c3df485-8e75-4378-87f6-c6463a520624"
 
   vcfFile <- paste0(dir_counts, "/", example, ".phi.txt")
+  msPhisFile <- paste0(dir_counts, "/", example, ".quadraticp.txt")
   
   vcfData <- tryCatch(read.table(vcfFile), error=function(e) NULL) # 96 trinucleotide counts are read as input
+  mean_square_phis <- tryCatch(read.table(msPhisFile), error=function(e) NULL)
   
   tumor_id <- gsub("^(.*)\\..*", "\\1", example)
   
@@ -378,7 +380,7 @@ extract_data_for_example <- function (example, dir_counts, tumortypes, dir_resul
  
   if (is.null(vcfData))
   {
-    return(list(tumor_id, vcfData, NULL, NULL, acronym, dir_name))
+    return(list(tumor_id, vcfData, NULL, NULL, NULL, acronym, dir_name))
   }
   
   assigns_phylo_nodes <- NULL
@@ -461,7 +463,7 @@ extract_data_for_example <- function (example, dir_counts, tumortypes, dir_resul
     assigns_phylo_nodes = NULL
   }
   
-  return(list(tumor_id, vcfData, phis, assigns_phylo_nodes, acronym, dir_name))
+  return(list(tumor_id, vcfData, phis, mean_square_phis, assigns_phylo_nodes, acronym, dir_name))
 }
 
 

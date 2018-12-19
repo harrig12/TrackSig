@@ -30,7 +30,7 @@ save_data_for_samples <- function(dir_counts = DIR_COUNTS,  bootstrap_counts = B
     if (simulated_data) {
       list[tumor_id, vcfData, phis, acronym, dir_name] <- extract_data_for_simulation(example, dir_counts, dir_create = F)
     } else {
-      list[tumor_id, vcfData, phis, assigns_phylo_nodes, acronym, dir_name] <- extract_data_for_example(example, dir_counts, tumortypes, dir_create = F)
+      list[tumor_id, vcfData, phis, mean_square_phis assigns_phylo_nodes, acronym, dir_name] <- extract_data_for_example(example, dir_counts, tumortypes, dir_create = F)
     }
 
     if (is.null(vcfData))
