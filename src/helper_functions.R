@@ -506,10 +506,8 @@ extract_bootstrap_data_for_example <- function (example, bootstrap_counts) {
   
   vcfData.bootstrap <- list()
   vcfData.phis <- list()
+  vcfData.quadratic_phis <- list()
   vcfData.bootstrap.unsorted <- list() 
-  
- # quadPhisFile <- paste0(dir_counts, "/", example, ".quadraticp.txt")
-#  mean_square_phis <- tryCatch(read.table(msPhisFile)$V1, error=function(e) NULL)
 
   for (vcfFile in (list.files(paste0(bootstrap_counts, "/", example, "/"))))
   {
@@ -526,6 +524,11 @@ extract_bootstrap_data_for_example <- function (example, bootstrap_counts) {
       phis <- vcfData[,1]
       vcfData.phis[[index]] <- phis
       vcfData[,1] <- NULL
+      
+      #get quadratic phi values
+      quadPhisFile <- gsub("mut_counts.txt", "quadraticp.txt", vcfFile)
+      quadraic_phis <- tryCatch(read.table(quadPhisFile)$V1, error=function(e) NULL) 
+      vcfData.quadratic_phis[[index]] <- quadraic_phis
     }
   
        # Hack because of the previous bug in the code that assigned 101 mutations to each time points
@@ -537,7 +540,7 @@ extract_bootstrap_data_for_example <- function (example, bootstrap_counts) {
      }
   }
   
-  return(list(vcfData.bootstrap, vcfData.phis))
+  return(list(vcfData.bootstrap, vcfData.phis, vcfData.quadratic_phis))
 }
 
 
@@ -704,7 +707,7 @@ compute_mean_sd_err <- function(mixtures_bootstrap, sig_names, dir_name = NULL, 
 }
 
 
-get_bootstrap_mixtures <- function(bootstrap_vcfs, bootstrap_phis, alex.t, dir_name, descr, verbose=TRUE)
+get_bootstrap_mixtures <- function(bootstrap_vcfs, bootstrap_phis, bootstrap_quadratic_phis, alex.t, dir_name, descr, verbose=TRUE)
 {
   mixtures_bootstrap <- list()
   changepoints_bootstrap <- list()
@@ -716,7 +719,7 @@ get_bootstrap_mixtures <- function(bootstrap_vcfs, bootstrap_phis, alex.t, dir_n
     if (!file.exists(paste0(dir_name,"mixtures.bootstrap_", j, descr, ".csv")) | !file.exists(paste0(dir_name, "changepoints.bootstrap_", j, descr, ".txt")))
     {
       if (changepoint_method == "PELT") {
-        list[cp, m] <- find_changepoints_pelt(t(bootstrap_vcfs[[j]]), alex.t)
+        list[cp, m] <- find_changepoints_pelt(t(bootstrap_vcfs[[j]]), alex.t, bootstrap_phis[[j]], bootstrap_quadratic_phis[[j]])
       } else {
         list[bics, optimal, cp, m] <- find_changepoints_over_all_signatures_one_by_one(bootstrap_vcfs[[j]], alex.t, n_signatures = ncol(alex.t))
       }

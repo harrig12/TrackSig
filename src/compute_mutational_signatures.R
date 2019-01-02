@@ -107,7 +107,7 @@ save_data_for_samples <- function(dir_counts = DIR_COUNTS,  bootstrap_counts = B
         assigns_phylo_nodes_sw = assigns_phylo_nodes
       }
       
-      list[bootstrap_vcfs, bootstrap_phis] <- lapply(extract_bootstrap_data_for_example(example, bootstrap_counts), t)
+      list[bootstrap_vcfs, bootstrap_phis, bootstrap_quadratic_phis] <- lapply(extract_bootstrap_data_for_example(example, bootstrap_counts), t)
 
       if (compute_bootstrap) {
         for (j in 1:length(bootstrap_phis))
@@ -127,7 +127,7 @@ save_data_for_samples <- function(dir_counts = DIR_COUNTS,  bootstrap_counts = B
     }
 
     save(vcfData, vcf, phis, phis_sliding_window, quadratic_phis, assigns_phylo_nodes, assigns_phylo_nodes_sw, 
-         acronym, window, shift, gap, tumor_id, phis_for_plot, bootstrap_vcfs, bootstrap_phis,
+         acronym, window, shift, gap, tumor_id, phis_for_plot, bootstrap_vcfs, bootstrap_phis, bootstrap_quadratic_phis,
          file = paste0(SAVED_SAMPLES_DIR, "/", example, ".RData"))
   }
 }
@@ -333,7 +333,7 @@ compute_errorbars_for_all_examples <- function(bootstrap_counts = BOOTSTRAP_COUN
     }, error = function(e){return()})
 
     print("Computing bootstrapped trajectories")
-    list[mixtures_bootstrap, changepoints_bootstrap] <- get_bootstrap_mixtures(bootstrap_vcfs, bootstrap_phis, alex.t, dir_name, "")
+    list[mixtures_bootstrap, changepoints_bootstrap] <- get_bootstrap_mixtures(bootstrap_vcfs, bootstrap_phis, bootstrap_quadratic_phis, alex.t, dir_name, "")
     list[mixtures.mean, mixtures.sd, mixtures.err] <- compute_mean_sd_err(mixtures_bootstrap, rownames(mixtures), dir_name)
     
     transition_points = NULL
