@@ -367,7 +367,7 @@ extract_data_for_example <- function (example, dir_counts, tumortypes, dir_resul
   msPhisFile <- paste0(dir_counts, "/", example, ".quadraticp.txt")
   
   vcfData <- tryCatch(read.table(vcfFile), error=function(e) NULL) # 96 trinucleotide counts are read as input
-  mean_square_phis <- tryCatch(read.table(msPhisFile), error=function(e) NULL)
+  mean_square_phis <- tryCatch(read.table(msPhisFile)$V1, error=function(e) NULL)
   
   tumor_id <- gsub("^(.*)\\..*", "\\1", example)
   
@@ -507,6 +507,9 @@ extract_bootstrap_data_for_example <- function (example, bootstrap_counts) {
   vcfData.bootstrap <- list()
   vcfData.phis <- list()
   vcfData.bootstrap.unsorted <- list() 
+  
+ # quadPhisFile <- paste0(dir_counts, "/", example, ".quadraticp.txt")
+#  mean_square_phis <- tryCatch(read.table(msPhisFile)$V1, error=function(e) NULL)
 
   for (vcfFile in (list.files(paste0(bootstrap_counts, "/", example, "/"))))
   {

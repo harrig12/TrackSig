@@ -30,7 +30,7 @@ save_data_for_samples <- function(dir_counts = DIR_COUNTS,  bootstrap_counts = B
     if (simulated_data) {
       list[tumor_id, vcfData, phis, acronym, dir_name] <- extract_data_for_simulation(example, dir_counts, dir_create = F)
     } else {
-      list[tumor_id, vcfData, phis, mean_square_phis assigns_phylo_nodes, acronym, dir_name] <- extract_data_for_example(example, dir_counts, tumortypes, dir_create = F)
+      list[tumor_id, vcfData, phis, quadratic_phis, assigns_phylo_nodes, acronym, dir_name] <- extract_data_for_example(example, dir_counts, tumortypes, dir_create = F)
     }
 
     if (is.null(vcfData))
@@ -126,7 +126,7 @@ save_data_for_samples <- function(dir_counts = DIR_COUNTS,  bootstrap_counts = B
       assigns_phylo_nodes = assigns_phylo_nodes_sw = bootstrap_vcfs = bootstrap_phis = bootstrap_vcfs_unsorted = NULL
     }
 
-    save(vcfData, vcf, phis, phis_sliding_window, assigns_phylo_nodes, assigns_phylo_nodes_sw, 
+    save(vcfData, vcf, phis, phis_sliding_window, quadratic_phis, assigns_phylo_nodes, assigns_phylo_nodes_sw, 
          acronym, window, shift, gap, tumor_id, phis_for_plot, bootstrap_vcfs, bootstrap_phis,
          file = paste0(SAVED_SAMPLES_DIR, "/", example, ".RData"))
   }
@@ -219,7 +219,7 @@ compute_signatures_for_all_examples <- function(dir_counts = DIR_COUNTS)
     if (!file.exists(paste0(dir_name, "mixtures.csv")) || !file.exists(paste0(dir_name, "changepoints.txt")))
     {
       if (changepoint_method == "PELT") {
-        list[changepoints, mixtures] <- find_changepoints_pelt(vcf, alex.t)
+        list[changepoints, mixtures] <- find_changepoints_pelt(vcf, alex.t, phis, quadratic_phis)
       } else {
         list[bics, optimal, changepoints, mixtures] <- find_changepoints_over_all_signatures_one_by_one(vcf, alex.t, n_signatures = ncol(alex.t))
       }
@@ -366,3 +366,4 @@ compute_errorbars_for_all_examples <- function(bootstrap_counts = BOOTSTRAP_COUN
 save_data_for_samples()
 suppressMessages(compute_signatures_for_all_examples())
 if (compute_bootstrap) {compute_errorbars_for_all_examples()}
+

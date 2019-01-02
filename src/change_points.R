@@ -356,9 +356,9 @@ find_changepoints_and_signature_set <- function(vcf, alex.t, prior_signatures = 
 }
 
 # Find optimal changepoint and mixtures using PELT method.
-find_changepoints_pelt <- function(vcf, alex.t)
+find_changepoints_pelt <- function(vcf, alex.t, phis, quadratic_phis)
 {
-  score_matrix <- score_partitions_pelt(vcf, alex.t)
+  score_matrix <- score_partitions_pelt(vcf, alex.t, phis, quadratic_phis)
   changepoints <- recover_changepoints(score_matrix)
 
   mixtures <- fit_mixture_of_multinomials_in_time_slices(vcf, changepoints, alex.t)
@@ -367,13 +367,13 @@ find_changepoints_pelt <- function(vcf, alex.t)
 }
 
 # Calculate penalized BIC score for all partitions using PELT method.
-score_partitions_pelt <- function(vcf, alex.t)
+score_partitions_pelt <- function(vcf, alex.t, phis, quadratic_phis)
 {
   n_bins <- ncol(vcf)
   n_sigs <- ncol(alex.t)
 
   # Bayeisan Information Criterion penalization constant
-  penalty <- (n_sigs - 1) * log(n_bins)
+  penalty <- (n_sigs - 1) * log(n_bins) + 2
 
   # Store score for all partitions of all sub-problems
   # Rows are length of sub-problem. Columns correspond to last changepoint
@@ -396,9 +396,11 @@ score_partitions_pelt <- function(vcf, alex.t)
         next
       }
 
+      r_seg_phis <- phis[(last_cp+1) : 18]
+      r_seg_quadratic_phis <- quadratic_phis[(last_cp+1) : sp_len]
       r_seg_counts <- rowSums(vcf[, (last_cp + 1):sp_len, drop = FALSE])
       r_seg_mix <- fit_mixture_of_multinomials_EM(r_seg_counts, alex.t)
-      r_seg_score <- 2 * log_likelihood_mixture_multinomials(r_seg_counts, alex.t, r_seg_mix)
+      r_seg_score <- 2 * (log_likelihood_mixture_multinomials(r_seg_counts, alex.t, r_seg_mix) + gaussian_mll(r_seg_phis, r_seg_quadratic_phis))
 
       l_seg_score <- ifelse(last_cp == 0, penalty, max_sp_scores[last_cp])
 

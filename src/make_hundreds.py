@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
 	#append sum square phis to output - use delim ";"
 	print(";", end="")
-	print(mean_squ_phis, end="")
+	print(mean_squ_phi, end="")
 
 	print("")
 
