@@ -4,16 +4,16 @@
 get_changepoints_vector <- function(data, lambda_type="lambda.1se")
 {
   X_dim = length(data)
-  
+
   X <- matrix(0, ncol=X_dim, nrow=X_dim)
   for (i in 1:X_dim)
   {
     for (j in 1:i)
       X[i,j] <- 1
   }
-  
+
   data_to_fit <- data
-  
+
   glm <- cv.glmnet(X, data_to_fit, alpha = 1, grouped=F)
   lambda = glm[[lambda_type]]
   coefficients <- coef(glm,s=lambda)[-1,]
@@ -45,7 +45,7 @@ get_changepoints_matrix_jointly <- function(data, lambda_type="lambda.1se")
 {
   # fitting all the rows of data jointly to find common change points for all signatures
   # each row represents one time series
-  
+
   X_dim = ncol(data)
   X <- matrix(0, ncol=X_dim, nrow=X_dim)
   for (i in 1:X_dim)
@@ -53,7 +53,7 @@ get_changepoints_matrix_jointly <- function(data, lambda_type="lambda.1se")
     for (j in 1:i)
       X[i,j] <- 1
   }
-  
+
   # get change values for all signatures
   change_matrix <- data[,1]
   change_matrix <- cbind(change_matrix, data[,-1] - data[,-ncol(data)])
@@ -61,10 +61,10 @@ get_changepoints_matrix_jointly <- function(data, lambda_type="lambda.1se")
   change_values_per_time_point <- apply(change_matrix, 2, function(x){ x[which.max(abs(x))]})
   # multiply the data by X to be able to fit it the same way as X*w, where w is the vector of change points
   data_to_fit <- X %*% change_values_per_time_point
-  
+
   #   # Another approach: take fitted piese-wise constant values for each sig, get sum of changes of those and fit
   #   data_to_fit <- apply(get_changepoints_per_row(data), 2, sum)
-  
+
   return(get_changepoints_vector(data_to_fit, lambda_type))
 }
 
@@ -72,7 +72,7 @@ get_changepoints_matrix_jointly <- function(data, lambda_type="lambda.1se")
 # Find change points iteratively. To find the next change points, consider every time point as a potential new change point
 # For every time point, fit mixture of multinomials and compute log likelihood and bic criteria.
 # The next change point is the one which gives lowest bic.
-# To correctly evaluate the model using BIC criteria, 
+# To correctly evaluate the model using BIC criteria,
 # we pass n_params -- the number of ther params of the model, besides number of checkpoints
 find_changepoints_over_all_signatures_one_by_one <- function(vcf, alex.t, n_signatures, parallelized=F)
 {
@@ -80,7 +80,7 @@ find_changepoints_over_all_signatures_one_by_one <- function(vcf, alex.t, n_sign
 
   overall_mixtures <- fit_mixture_of_multinomials_EM(apply(vcf, 1, sum), as.matrix(alex.t))
   overall_mixtures.table <- matrix(rep(overall_mixtures, ncol(vcf)), ncol=ncol(vcf))
- 
+
   changepoints <- c()
   mixtures <- overall_mixtures.table
   bic <- list()
@@ -91,7 +91,7 @@ find_changepoints_over_all_signatures_one_by_one <- function(vcf, alex.t, n_sign
     print(paste0("Searching for ", t, "-th change point"))
     pcm <- proc.time()
     next_cp <- find_next_change_point_over_all_signatures(vcf, alex.t, changepoints, mixtures, parallelized=parallelized)
-    
+
     if (is.null(next_cp))
     {
        break
@@ -105,16 +105,16 @@ find_changepoints_over_all_signatures_one_by_one <- function(vcf, alex.t, n_sign
     mixtures_per_iteration[[t]] <- mixtures
     print(paste("New changepoints", toString(changepoints)))
     print(proc.time() - pcm)
-    
+
     if (t != 1)
       if (bic[[t]] > bic[[t-1]])
         break
   }
-  
+
   optimal <- which.min(unlist(bic))
   optimal_changepoints <- changepoints_per_iteration[[optimal]]
   optimal_mixtures <- fit_mixture_of_multinomials_in_time_slices(vcf, optimal_changepoints, alex.t)
-  
+
   return(list(bics = unlist(bic),
               optimal = optimal,
               changepoints = optimal_changepoints,
@@ -131,7 +131,7 @@ find_next_change_point_over_all_signatures <- function(vcf, alex.t, changepoints
     {
       if (time_point %in% changepoints)
       {
-        list() 
+        list()
       } else {
         find_next_change_point_over_all_signatures_job(vcf, alex.t, changepoints, mixtures, time_point)
       }
@@ -148,16 +148,16 @@ find_next_change_point_over_all_signatures <- function(vcf, alex.t, changepoints
       likelihood_per_time_split[[time_point]] <- result
     }
   }
- 
+
   # Delete entries that correspond to the previous changepoints -- they are empty anyway
   if (length(changepoints) != 0)
   {
     likelihood_per_time_split <- likelihood_per_time_split[-changepoints]
   }
-  
+
   # Get log likelihoods for each proposed time split and see which one performed best
-  ll_per_time_split <- get_values_from_list(likelihood_per_time_split, "ll", concat_function="c") 
-  
+  ll_per_time_split <- get_values_from_list(likelihood_per_time_split, "ll", concat_function="c")
+
   if (length(ll_per_time_split) < 2)
   {
      result = NULL
@@ -178,33 +178,33 @@ find_next_change_point_over_all_signatures <- function(vcf, alex.t, changepoints
 find_next_change_point_over_all_signatures_job <- function(vcf, alex.t, changepoints, mixtures, time_point)
 {
     new_changepoints <- sort(c(changepoints, time_point))
-    current_change_point <- which(new_changepoints == time_point) 
+    current_change_point <- which(new_changepoints == time_point)
     if (current_change_point > 1) {
       previos_cp <- new_changepoints[current_change_point-1]
     } else {
       previos_cp <- 1
     }
-    
+
     if (current_change_point < length(new_changepoints)) {
       next_cp <- new_changepoints[current_change_point+1]
-    } else { 
+    } else {
       next_cp <- ncol(vcf) + 1
     }
- 
+
     # Compute mixtures only around new checkpoint. We don't have to recompute mixtures around time points which did not change.
     mixtures_around_new_checkpoint <- fit_mixture_of_multinomials_in_time_slices(vcf[,c((previos_cp):(next_cp-1))], c(time_point - previos_cp +1 ), alex.t)
-    
+
     if (previos_cp == 1) {
       new_mixtures <- mixtures_around_new_checkpoint
     } else {
       new_mixtures <- mixtures[,1:(previos_cp-1), drop=FALSE]
       new_mixtures <- cbind(new_mixtures, mixtures_around_new_checkpoint)
     }
-    
+
     if ((next_cp+1) <= ncol(mixtures)) {
       new_mixtures <- cbind(new_mixtures, mixtures[,(next_cp):ncol(mixtures)])
     }
-    
+
     if (ncol(new_mixtures) != ncol(mixtures))
     {
       print(ncol(new_mixtures))
@@ -220,8 +220,8 @@ find_next_change_point_over_all_signatures_job <- function(vcf, alex.t, changepo
     }
 
     stopifnot(length(log_prob_per_timepoint) == ncol(vcf))
-    
-    return(list(ll = sum(log_prob_per_timepoint), 
+
+    return(list(ll = sum(log_prob_per_timepoint),
          mixtures = new_mixtures,
          changepoints = new_changepoints))
 }
@@ -238,30 +238,30 @@ find_changepoints_and_signature_set <- function(vcf, alex.t, prior_signatures = 
 
   if (length(prior_signatures) == 0)
     prior_signatures <- colnames(alex.t)
-  
+
   sig_set <- prior_signatures
   alex.t.set <- alex.t[,sig_set]
   list[baseline_bics, optimal, changepoints, mixtures] <- find_changepoints_over_all_signatures_one_by_one(vcf, alex.t.set, n_signatures=length(sig_set))
   baseline_min <- baseline_bics[optimal]
   print(paste("Initial baseline:", baseline_min))
   old_changepoints <- c()
-  
+
   while(!(length(changepoints) == length(old_changepoints) &
             sum(old_changepoints == changepoints) == length(changepoints)))
   {
     quit = FALSE
-    
+
     while (!quit)
     {
       # Try to add some signatures to sig_set
       bics_with_new_signature <- foreach (sig = setdiff(colnames(alex.t),sig_set)) %dopar%
-      { 
+      {
         print(paste("Investigating", sig))
         current_sig_set <- c(sig_set, sig)
         alex.t.set <- alex.t[,current_sig_set]
-  
+
         new_mixtures <- fit_mixture_of_multinomials_in_time_slices(vcf, changepoints, alex.t.set)
-        
+
         # Compute log likelihood per time point if we added signature sig
         log_prob_per_timepoint <- c()
         for (t in 1:ncol(vcf))
@@ -269,13 +269,13 @@ find_changepoints_and_signature_set <- function(vcf, alex.t, prior_signatures = 
           log_prob_per_timepoint[t] <- log_likelihood_mixture_multinomials(vcf[,t], alex.t.set, new_mixtures[,t])
         }
         ll <- sum(log_prob_per_timepoint)
-  
+
         bic <- -2 * ll + ((length(changepoints)+1) * (length(current_sig_set)-1)) * log(n_timepoints)
 #         list[bic, optimal, changepoints, mixtures] <- find_changepoints_over_all_signatures_one_by_one(vcf, alex.t.set, n_params=length(current_sig_set), parallelized=F)
 #         bic <- bic[optimal]
         setNames(bic, sig)
       }
-      
+
       bics_with_new_signature <- unlist(bics_with_new_signature)
       print(paste("Potential candidates:", toString(bics_with_new_signature)))
       new_signature <- names(bics_with_new_signature[which.min(bics_with_new_signature)])
@@ -291,12 +291,12 @@ find_changepoints_and_signature_set <- function(vcf, alex.t, prior_signatures = 
         quit=TRUE
       }
     }
-    
+
     print(paste("Signatures after adding step:", toString(sig_set)))
-          
+
     # Try to remove some signatures from sig_set
     quit = FALSE
-    
+
     while (!quit)
     {
       # Try to add some signatures to sig_set
@@ -305,9 +305,9 @@ find_changepoints_and_signature_set <- function(vcf, alex.t, prior_signatures = 
         print(paste("Investigating", sig))
         current_sig_set <- setdiff(sig_set, sig)
         alex.t.set <- alex.t[,current_sig_set]
-        
+
         new_mixtures <- fit_mixture_of_multinomials_in_time_slices(vcf, changepoints, alex.t.set)
-        
+
         # Compute log likelihood per time point if we remove signature sig
         log_prob_per_timepoint <- c()
         for (t in 1:ncol(vcf))
@@ -315,14 +315,14 @@ find_changepoints_and_signature_set <- function(vcf, alex.t, prior_signatures = 
           log_prob_per_timepoint[t] <- log_likelihood_mixture_multinomials(vcf[,t], alex.t.set, new_mixtures[,t])
         }
         ll <- sum(log_prob_per_timepoint)
-        
+
         bic <- -2 * ll + (length(changepoints)+1) * (length(current_sig_set)-1) * log(n_timepoints)
 
 #         list[bic, optimal, changepoints, mixtures] <- find_changepoints_over_all_signatures_one_by_one(vcf, alex.t.set, n_params=length(current_sig_set), parallelized=F)
 #         bic <- bic[optimal]
         setNames(bic, sig)
       }
-      
+
       bics_with_removed_signature <- unlist(bics_with_removed_signature)
       print(paste("Potential signatures: ", toString(bics_with_removed_signature)))
       removed_signature <- names(bics_with_removed_signature[which.min(bics_with_removed_signature)])
@@ -338,17 +338,17 @@ find_changepoints_and_signature_set <- function(vcf, alex.t, prior_signatures = 
         quit = TRUE
       }
     }
-    
+
     print(paste("Signatures after removing step:", toString(sig_set)))
-          
+
     old_changepoints <- changepoints
-    
+
     alex.t.set <- alex.t[,sig_set]
     list[bics, optimal, changepoints, mixtures] <- find_changepoints_over_all_signatures_one_by_one(vcf, alex.t.set, n_signatures=length(sig_set))
     print(paste("Old baseline: ", baseline_min))
     baseline_min <- bics[optimal]
     print(paste("New baseline: ", baseline_min))
-    
+
     print(paste("Updated changepoints: ", toString(changepoints)))
   }
 
@@ -367,13 +367,14 @@ find_changepoints_pelt <- function(vcf, alex.t, phis, quadratic_phis)
 }
 
 # Calculate penalized BIC score for all partitions using PELT method.
-score_partitions_pelt <- function(vcf, alex.t, phis, quadratic_phis)
+score_partitions_pelt <- function(vcf, alex.t, phis, quadratic_phis,
+                                  penalty = log(n_bins) * 2,
+                                  score_fxn = sum_gaussian_ll)
 {
   n_bins <- ncol(vcf)
   n_sigs <- ncol(alex.t)
 
-  # Bayeisan Information Criterion penalization constant
-  penalty <- (n_sigs - 1) * log(n_bins) + 2
+  # Bayeisan Information Criterion penalization constant defalut parameter
 
   # Store score for all partitions of all sub-problems
   # Rows are length of sub-problem. Columns correspond to last changepoint
@@ -400,7 +401,8 @@ score_partitions_pelt <- function(vcf, alex.t, phis, quadratic_phis)
       r_seg_quadratic_phis <- quadratic_phis[(last_cp+1) : sp_len]
       r_seg_counts <- rowSums(vcf[, (last_cp + 1):sp_len, drop = FALSE])
       r_seg_mix <- fit_mixture_of_multinomials_EM(r_seg_counts, alex.t)
-      r_seg_score <- 2 * (log_likelihood_mixture_multinomials(r_seg_counts, alex.t, r_seg_mix) + gaussian_mll(r_seg_phis, r_seg_quadratic_phis))
+      r_seg_score <- 2 * score_fxn(multinomial_vector = r_seg_counts, phis = r_seg_phis, quadratic_phis = r_seg_quadratic_phis,
+                                   composing_multinomials = alex.t, mixtures = r_seg_mix)
 
       l_seg_score <- ifelse(last_cp == 0, penalty, max_sp_scores[last_cp])
 
@@ -439,7 +441,7 @@ recover_changepoints <- function(sp_score_matrix)
     if (prev - 1 <= 1)
     {
       continue <- FALSE
-    } 
+    }
     else
     {
       changepoints <- c(prev - 1, changepoints)
