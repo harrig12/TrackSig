@@ -1,0 +1,9 @@
+.DS_Store
+saved_data/*
+data/*
+dev/*
+results_signature_trajectories/*
+annotation/hg19/*
+_Inline/
+
+.Rproj.user
