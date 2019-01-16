@@ -1,7 +1,7 @@
 #!/bin/bash
 # clean example files from README example 
 
-cd ~/Documents/BCB430/TrackSig/
+cd ~/Documents/Cait-TrackSig
  
 rm -rf data/bootstrap/
 rm -rf data/counts/
