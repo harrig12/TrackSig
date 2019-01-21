@@ -11,4 +11,4 @@ python src/make_corrected_vaf.py --vcf data/example.vcf --purity data/example_pu
 # bash dev/gunzip_hg19.sh 
 
 src/make_counts.sh data/example.vcf data/example_vaf.txt
-#Rscript src/compute_mutational_signatures.R
+Rscript src/compute_mutational_signatures.R
