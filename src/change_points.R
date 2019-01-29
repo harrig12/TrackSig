@@ -369,7 +369,7 @@ find_changepoints_pelt <- function(vcf, alex.t, phis, quadratic_phis)
 # Calculate penalized BIC score for all partitions using PELT method.
 score_partitions_pelt <- function(vcf, alex.t, phis, quadratic_phis,
                                   penalty = log(n_bins) * 2,
-                                  score_fxn = sum_gaussian_ll)
+                                  score_fxn = gaussian_ll)
 {
   n_bins <- ncol(vcf)
   n_sigs <- ncol(alex.t)
