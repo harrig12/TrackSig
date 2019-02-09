@@ -14,7 +14,7 @@ sig_amount <- "onlyKnownSignatures" # recommended
 #sig_amount <- "all" # not recommended, time-consuming
 
 # if the signatures are specified per cancer type or per sample
-cancer_type_signatures = TRUE
+cancer_type_signatures = FALSE
 
 # if signatures trajectories need to be computed on bootstrapped signatures as well
 # bootstrapping provides the uncertainty estimations on the trajectories
@@ -32,7 +32,7 @@ postfix = ""
 changepoint_method = "PELT"
 
 # file with cancer types of each sample
-tumortype_file <- "annotation/tumortypes.txt"
+tumortype_file <- "data/tumortypes.txt"
 
 if (simulated_data) {
   DIR_COUNTS = "./simulated_data/"
@@ -58,7 +58,7 @@ signature_file = "annotation/alexSignatures.txt"
 trinucleotide_file = "annotation/trinucleotide.txt"
 
 # specifies active signatures in TCGA cancer types
-active_signatures_file = "annotation/active_signatures_transposed.txt"
+active_signatures_file = "PCAWG_sigProfiler_SBS_signatures_in_samples_waliqID-1.csv"
 
 # specifies active signatures in each sample. Contains the active signatures for the example
 # active_signatures_file = "annotation/active_in_samples.txt"

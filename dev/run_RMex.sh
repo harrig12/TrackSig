@@ -1,7 +1,7 @@
 #!/bin/bash
 # run track sig README example from clean install 
 
-cd ~/Documents/Cait-TrackSig
+#cd ~/Documents/Cait-TrackSig
 
 #python src/make_corrected_vaf.py --vcf data/example.vcf --output data/example_vaf.txt
 python src/make_corrected_vaf.py --vcf data/example.vcf --purity data/example_purity.txt --output data/example_vaf.txt
