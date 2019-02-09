@@ -9,21 +9,26 @@ getwd()
 
 #set up
 outdir <- "data"
-#simulations <- c("sim5000")
-#sim_muts <- list(c(2500, 1500, 1000))
+#simulations <- c("sim940", "sim5000", "sim9500")
+#sim_muts <- list(c(500, 300, 140), c(2500, 1500, 1000), c(5000, 3000, 1500))
 
-simulations <- c("sim940")
-sim_muts <- list(c(500, 300, 140))
+simulations <- c("sim940", "sim5000")
+sim_muts <- list(c(500, 300, 140), c(2500, 1500, 1000))
+
+#annotation files
+sim_activities_file <- "annotation/sim_active_in_sample.txt"
+sim_purity_file <- "annotation/sim_purity.txt"
+sim_tumortype_file <-"annotation/sim_tumortypes.txt"
 
 # create data directory if missing
 if (dir.exists(outdir) == FALSE) {
   dir.create(outdir)
 }
 
-# remove simulation active signatures (rebuilt upon simulation)
-if (file.exists("annotation/sim_active_in_sample.txt")){
-  unlink("annotation/sim_active_in_sample.txt")
-}
+# remove simulation annotations (rebuilt upon simulation)
+unlink(sim_activities_file)
+unlink(sim_purity_file)
+unlink(sim_tumortype_file)
 
 # config (same variables as in in header.R)
 TrackSig.options(purity_file = "annotation/sim_purity.txt",
@@ -39,6 +44,14 @@ TrackSig.options(purity_file = "annotation/sim_purity.txt",
 #check setup
 stopifnot(length(simulations) == length(sim_muts))
 
+# write headers for sim annotation files
+
+write.table(t(c("samplename", "purity")), file = sim_purity_file,
+            col.names = F, row.names = F, quote = F, sep = "\t")
+
+write.table(t(c("ID", "tumortype")), file = sim_tumortype_file,
+            col.names = F, row.names = F, quote = F, sep = "\t")
+
 
 for (sim_i in 1:length(simulations)){
   # simulate vcfs
@@ -49,7 +62,8 @@ for (sim_i in 1:length(simulations)){
 
 
 for (sim_i in 1:length(simulations)){
-    # tracksig - make counts
+  # tracksig - make counts
+  print(sprintf("%s", simulations[sim_i]))
   system(sprintf("src/run_simulations.sh data/mut_types/ %s", simulations[sim_i]))
 }
 
