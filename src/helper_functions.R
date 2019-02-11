@@ -835,6 +835,56 @@ load_annotation <- function(tumortype_file, signature_file, active_signatures_fi
   return(list(alex, tumortypes, active_signatures, active_signatures.our_samples))
 }
 
+
+load_annotation_pcawg <- function(tumortype_file, signature_file, active_signatures_file, trinucleotide_file) {
+  names_trinucleotide <- read.table(paste0(trinucleotide_file), stringsAsFactors = F)
+  names_trinucleotide <- apply(names_trinucleotide, 1, function(x) { do.call("paste", c(as.list(x), sep = "_"))})
+
+  # Load the tumor types for tumor IDs.
+  tumortypes <- read.delim(tumortype_file, header = F, stringsAsFactors=F)
+  colnames(tumortypes) <- c("ID", "tumor_type")
+
+ # Signatures from PCAWG group
+  alex <- read.table(signature_file, header = T, stringsAsFactors = FALSE)
+  #alex <- read.csv(paste0(DIR, "PCAWG_signature_patterns_beta.csv"), header = T)
+  #pcawg_trinucleotides <- paste0(gsub(">", "_", alex[,1]), "_", alex[,2])
+  pcawg_trinucleotides <- paste(substr(alex[,1], 2, 2), substr(alex[,1], 5, 5), substr(alex[,1], 1, 3), sep="_")
+  rownames(alex) <- pcawg_trinucleotides
+  alex <- alex[,-1]
+  # to make the order of mutation types match names_trinucleotide
+  alex <- alex[match(names_trinucleotide, pcawg_trinucleotides),]
+  #colnames(alex) <- gsub("Signature.(.*)", "\\1", colnames(alex))
+  #colnames(alex) <- gsub("PCAWG.(.*)", "\\1", colnames(alex))
+
+
+  sigs_to_merge <- list()
+  sigs_to_merge[["SBS7"]] <- c("SBS7a", "SBS7b", "SBS7c", "SBS7d")
+  sigs_to_merge[["SBS17"]] <- c("SBS17a", "SBS17b")
+  sigs_to_merge[["SBS2+13"]] <- c("SBS2", "SBS13")
+  sigs_to_merge[["SBS10"]] <- c("SBS10a", "SBS10b")
+
+  alex_merged <- t(merge_signatures(t(alex), sigs_to_merge))
+
+  active_signatures <- active_signatures.our_samples <- NULL
+  if (!is.null(active_signatures_file)) {
+
+    active_signatures <- NULL
+
+    active_signatures.our_samples <-  active_signatures.our_samples <- read.delim(active_signatures_file, stringsAsFactors=F)
+    colnames(active_signatures.our_samples) <- c("tumor_type",  "ID", colnames(active_signatures.our_samples)[3:ncol(active_signatures.our_samples)])
+
+    active_signatures.our_samples.data <- active_signatures.our_samples[,3:ncol(active_signatures.our_samples)]
+    active_signatures.our_samples.data[active_signatures.our_samples.data > 0] <- 1
+
+    active_signatures.our_samples <- cbind(active_signatures.our_samples[,c(1,2)], Name=NA, active_signatures.our_samples.data)
+    active_signatures.our_samples$Name <- sapply(active_signatures.our_samples$tumor_type, toString)
+
+  }
+
+  return(list(alex_merged, tumortypes, active_signatures, active_signatures.our_samples))
+}
+
+
 get_sample_purity <- function(tumor_id) {
   purities <-read.delim(purity_file)
 

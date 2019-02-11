@@ -3,7 +3,8 @@
 # skips perl code
 
 outdir=$1
-simulation_name=$2
+sim_dir=$2
+simulation_name=$3
 
 if [[ -z $outdir ]]; then
 	echo "Please provide an output directory ... exiting"
@@ -20,16 +21,16 @@ if [[ -z $simulation_name ]]; then
 fi
 
 # make vaf
-python src/make_corrected_vaf.py --vcf data/"$simulation_name".vcf --output data/"$simulation_name"_vaf.txt
+python src/make_corrected_vaf.py --vcf $sim_dir/"$simulation_name".vcf --output $sim_dir/"$simulation_name"_vaf.txt
 
 # take out tri header
-tail -n +2 data/"$simulation_name"_tri.txt > tmp
+tail -n +2 $sim_dir/"$simulation_name"_tri.txt > tmp
 
 # take out tri chr (interferes with sort) and sort
 sed 's/^...//' tmp | sort -n > tmp_tri
 
 # sort and extract phis
-sort -n data/"$simulation_name"_vaf.txt > tmp_vaf
+sort -n $sim_dir/"$simulation_name"_vaf.txt > tmp_vaf
 
 # put together mutation_types file
 sort -k 3 -r <(paste <(cut -f1,2 tmp_tri) <(cut -d= -f2 tmp_vaf) <(cut -f3,4,5 tmp_tri)) | cat > "$simulation_name".mut_types.txt
@@ -44,7 +45,7 @@ mv "$simulation_name".mut_types.txt $outdir
 rm tmp*
 
 # make counts
-src/sim_make_counts.sh data/"$simulation_name".vcf data/"$simulation_name"_vaf.txt
+src/sim_make_counts.sh $sim_dir/"$simulation_name".vcf $sim_dir/"$simulation_name"_vaf.txt
 
 # compute mutational signtures
 #Rscript src/compute_mutational_signatures.R
