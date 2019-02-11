@@ -2,6 +2,7 @@
 saved_data/*
 data/*
 dev/*
+annotation/sim*
 results_signature_trajectories/*
 annotation/hg19/*
 _Inline/
