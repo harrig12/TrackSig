@@ -867,10 +867,7 @@ load_annotation_pcawg <- function(tumortype_file, signature_file, active_signatu
 
   active_signatures <- active_signatures.our_samples <- NULL
   if (!is.null(active_signatures_file)) {
-
-    active_signatures <- NULL
-
-    active_signatures.our_samples <-  active_signatures.our_samples <- read.delim(active_signatures_file, stringsAsFactors=F)
+    active_signatures.our_samples <- read.delim(active_signatures_file, stringsAsFactors=F)
     colnames(active_signatures.our_samples) <- c("tumor_type",  "ID", colnames(active_signatures.our_samples)[3:ncol(active_signatures.our_samples)])
 
     active_signatures.our_samples.data <- active_signatures.our_samples[,3:ncol(active_signatures.our_samples)]
@@ -879,6 +876,9 @@ load_annotation_pcawg <- function(tumortype_file, signature_file, active_signatu
     active_signatures.our_samples <- cbind(active_signatures.our_samples[,c(1,2)], Name=NA, active_signatures.our_samples.data)
     active_signatures.our_samples$Name <- sapply(active_signatures.our_samples$tumor_type, toString)
 
+    if ("SBS2.13" %in% colnames(active_signatures.our_samples)) {
+      colnames(active_signatures.our_samples)[colnames(active_signatures.our_samples) == "SBS2.13"] = "SBS2+13" 
+    }
   }
 
   return(list(alex_merged, tumortypes, active_signatures, active_signatures.our_samples))

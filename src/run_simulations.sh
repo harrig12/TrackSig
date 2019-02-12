@@ -20,6 +20,12 @@ if [[ -z $simulation_name ]]; then
 	exit
 fi
 
+
+# !!!!!!!!! TODO: also provide cna file
+
+
+
+
 # make vaf
 python src/make_corrected_vaf.py --vcf $sim_dir/"$simulation_name".vcf --output $sim_dir/"$simulation_name"_vaf.txt
 

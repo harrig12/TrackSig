@@ -16,7 +16,7 @@ make_hundreds_script="src/make_hundreds.py"
 get_mutation_type_script="src/getMutationTypes.pl"
 bootstrap_mutations_script="src/bootstrap_mutations.py"
 
-do_bootstrap=true
+do_bootstrap=false
 
 N_BOOTSTRAPS=30
 
