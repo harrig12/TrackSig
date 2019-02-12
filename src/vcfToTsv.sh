@@ -4,7 +4,7 @@
 # format vcf file for pyclone input
 vcfFile=$1
 cnaFile=$2
-outFile=data/pyclone_sim940.tsv
+outFile=$3
 
 # extract mutation_id
 cut -f1,2 $vcfFile | tr "\t" "_" > tmp_col1
