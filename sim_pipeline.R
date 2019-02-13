@@ -60,10 +60,12 @@ for (sim_i in 1:length(simulations)){
   system(sprintf("src/run_simulations.sh data/mut_types/ data/%s %s", simulations[sim_i], simulations[sim_i]))
 }
 
+
 pcawg_format = T
 tumortype_file <- sim_tumortype_file
 purity_file <- sim_purity_file
 active_signatures_file <- sim_activities_file
+tracksig_results_dir = DIR_RESULTS = "TS_results_signature_trajectories/"
 source("src/init_tracksig.R")
 
 # source(sprintf("src/init_tracksig.R --tumortypes %s --purity %s  --signatures %s --trinucleotide %s --active %s", 
@@ -71,6 +73,9 @@ source("src/init_tracksig.R")
 
 # tracksig - compute mutational signatures
 compute_signatures_for_all_examples(countsDir = "data/counts/", bootstrapDir = "data/bootstrap/")
+
+extract_exposures_per_mutation(activities_dir = paste0(tracksig_results_dir, "/SIMULATED/"), 
+  sorted_mutations_dir = "data/mut_types/", bin_size = 100)
 
 # tracksig - bootstrap not functional yet
 #compute_errorbars_for_all_examples()

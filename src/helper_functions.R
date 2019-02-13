@@ -898,3 +898,57 @@ get_sample_purity <- function(tumor_id) {
   return(sample_purity)
 }
 
+
+
+extract_exposures_per_mutation <- function(activities_dir, sorted_mutations_dir, bin_size = 100) {
+  # activities_dir: path to the 
+  # sorted_mutations_dir: folder with files for each tumour sample (or simulations). Each file has a list of mutations SORTED BY CCF
+  tumor_list <- list.dirs(activities_dir, recursive = F, full.names=F)
+
+  for (tumor in tumor_list) {
+    sorted_mut_file = paste0(sorted_mutations_dir, "/", tumor, ".mut_types.txt")
+    if (!file.exists(sorted_mut_file)) {
+      print(sprintf("File %s does not exist", sorted_mut_file))
+      next
+    }
+
+    mut_list <- read.delim(sorted_mut_file, header=F, stringsAsFactors=F)
+    colnames(mut_list) <- c("chr", "pos", "ccf", "ref", "alt", "tri")
+    ccfs <- mut_list[,"ccf"]
+
+    # Check if ccfs are in the decreasing order
+    stopifnot(!is.unsorted(rev(ccfs)))
+
+    activity_file <- paste0(activities_dir, "/", tumor, "/mixtures.csv")
+    if (!file.exists(activity_file)) {
+      print(sprintf("Activity file %s does not exist", activity_file))
+      next
+    }
+
+    activities <- read.csv(activity_file, header=T, stringsAsFactors=F)
+    rownames(activities) <- sapply(activities[,1], toString)
+    activities <- activities[,-1]
+    activities <- t(activities)
+
+    n_time_points = nrow(activities)
+
+    stopifnot(nrow(mut_list) <= n_time_points * bin_size)
+
+    activities_per_mut <- c()
+    for (i in 1:n_time_points) {
+      mut_current_tp = mut_list[(bin_size*(i-1)+1):(bin_size * i), ]
+      stopifnot(nrow(mut_current_tp) == bin_size)
+
+      current_activities = activities[i,,drop=F]
+      # repeat current_activities for every mutation
+      current_activities <- current_activities[rep(1, nrow(mut_current_tp)),]
+
+      data <- suppressWarnings(data.frame(chromosome=mut_current_tp$chr, start=mut_current_tp$pos, current_activities))
+      activities_per_mut <- rbind(activities_per_mut, data)
+    }
+
+    stopifnot(nrow(activities_per_mut) == nrow(mut_list))
+    write.table(activities_per_mut, file = paste0(activities_dir, "/", tumor, "/sig_exposures_per_mut.txt"), sep = "\t", row.names=F, quote=F)
+  }
+}
+
