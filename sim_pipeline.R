@@ -32,27 +32,13 @@ source("src/ccf_simulations.R")
 ####################################################
 # Create simulation vcfs
 print(sprintf("Generating simulations ..."))
-simulations = create_simulation_set(outdir = outdir, 
+simulations = create_simulation_set(outdir = outdir,
   mut_per_sim = mut_per_sim,
   sim_activity_file = sim_activities_file,
   sim_purity_file = sim_purity_file,
   sim_tumortype_file = sim_tumortype_file,
   signature_file = signature_file,
   trinucleotide_file = trinucleotide_file)
-
-####################################################
-# Run simulations through TrackSig
-# library("TrackSig")
-
-# # config (same variables as in in header.R)
-# TrackSig.options(purity_file = sim_purity_file,
-#                  signature_file = signature_file,
-#                  trinucleotide_file = trinucleotide_file,
-#                  active_signatures_file = sim_activities_file,
-#                  tumortype_file = sim_tumortype_file,
-#                  sig_amount = "onlyKnownSignatures",
-#                  compute_bootstrap = FALSE,
-#                  cancer_type_signatures = FALSE)
 
 for (sim_i in 1:length(simulations)){
   # tracksig - make counts
@@ -68,60 +54,18 @@ active_signatures_file <- sim_activities_file
 tracksig_results_dir = DIR_RESULTS = "TS_results_signature_trajectories/"
 source("src/init_tracksig.R")
 
-# source(sprintf("src/init_tracksig.R --tumortypes %s --purity %s  --signatures %s --trinucleotide %s --active %s", 
+# source(sprintf("src/init_tracksig.R --tumortypes %s --purity %s  --signatures %s --trinucleotide %s --active %s",
 #   sim_tumortype_file, sim_purity_file, signature_file, trinucleotide_file, sim_activities_file))
 
 # tracksig - compute mutational signatures
 compute_signatures_for_all_examples(countsDir = "data/counts/", bootstrapDir = "data/bootstrap/")
 
-extract_exposures_per_mutation(activities_dir = paste0(tracksig_results_dir, "/SIMULATED/"), 
+extract_exposures_per_mutation(activities_dir = paste0(tracksig_results_dir, "/SIMULATED/"),
   sorted_mutations_dir = "data/mut_types/", bin_size = 100)
 
 # tracksig - bootstrap not functional yet
 #compute_errorbars_for_all_examples()
 
-
-
-
-#################
-# deconstructSig Simulations
-#################
-#library(deconstructSigs)
-
-
-#vcfData <- read.delim(sprintf("data/%s.vcf", simulation_name))
-#
-## format for deconstructSigs according to https://github.com/raerose01/deconstructSigs
-#vcfData <- cbind(1, vcfData)
-#colnames(vcfData)[1] <- "ids"
-#
-#
-#sigs <- mut.to.sigs.input(vcfData[1:100,],
-#                          sample.id = "ids",
-#                          chr = "X.CHROM",
-#                          pos = "POS",
-#                          ref = "REF",
-#                          alt = "ALT")
-#
-
-# fileName <- "data/vaf_DSformat_cosmic.txt"
-
-# DSformatSigs <- read.delim(fileName)
-
-# # bad habits
-# DSformatSigs <- as.data.frame(t(as.matrix(table(DSformatSigs))))
-# DSformatSigs[1,] <- lapply(DSformatSigs[1,], as.numeric)
-# rownames(DSformatSigs) <- "sim5000"
-
-
-# alex <- as.data.frame(t(TrackSig:::alex))
-# alexDS <- whichSignatures(tumor.ref = DSformatSigs, contexts.needed = T, signatures.ref = alex)
-
-# cosmic <- deconstructSigs::signatures.cosmic
-# cosmicDS <- whichSignatures(tumor.ref = DSformatSigs, contexts.needed = T, signatures.ref = cosmic)
-
-# round(alexDS$weights, 4)
-# round(cosmicDS$weights, 4)
 
 
 
