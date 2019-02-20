@@ -23,6 +23,9 @@ for (simName in simNames){ #for each simulation
   vafTable <- separate(vafTable, chr, into = c("V1", "chr"), sep = "chr")
   vafTable <- vafTable[,c(2:6)]
 
+  # scale vaf by 100
+  vafTable$vaf <- apply(vafTable[5], MARGIN = 1, prod, 100)
+
   # read in CNA data
   cnaTable <- read.table(sprintf("data/%s/%s_cna.txt", simName, simName), header = T)
 
