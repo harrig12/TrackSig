@@ -29,7 +29,7 @@ for (simName in simNames){ #for each simulation
 
   # outdir
   resultsDir <- paste0("SCDS_results/SIMULATED", "/", simName)
-  dir.create(resultsDir, showWarnings=TRUE)
+  dir.create(resultsDir, showWarnings=TRUE, recursive = TRUE)
 
   #################
   # sciclone
@@ -131,7 +131,7 @@ for (simName in simNames){ #for each simulation
 
   # plot
 
-  plotName <- sprintf("%s/%s", resultsDir, "trajectory.pdf")
+  plotName <- sprintf("%s/%s_%s", resultsDir, simName, "trajectory.pdf")
   TrackSig:::plot_signatures(mixtures*100, plot_name = plotName, phis = phis, mark_change_points = F,
                   change_points = NULL, transition_points = NULL, scale=1.2, save = T)
 
