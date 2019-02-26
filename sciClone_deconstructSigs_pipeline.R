@@ -29,7 +29,7 @@ for (simName in simNames){ #for each simulation
 
   # outdir
   resultsDir <- paste0("SCDS_results/SIMULATED", "/", simName)
-  dir.create(resultsDir, showWarnings=TRUE, recursive = TRUE)
+  dir.create(resultsDir, showWarnings=FALSE, recursive = TRUE)
 
   #################
   # sciclone
