@@ -21,32 +21,15 @@ simNames <- simNames[sel]
 sim_activities_file <- "annotation/sim_active_in_sample.txt"
 signature_file <- "annotation/sigProfiler_SBS_signatures.txt"
 
-# outdir
-resultsDir <- "SCDS_results/SIMULATED"
-dir.create(resultsDir, showWarnings=FALSE)
-
-
-#################
-# helper functions
-#################
-
-writeMixtures <- function(){
-
-}
-
-
-writeExposuresPerMut <- function(){
-
-}
-
-writePlot <- function(){
-
-}
-
-#####################################################################################
 
 # to be parallelized
 for (simName in simNames){ #for each simulation
+
+  print(simName)
+
+  # outdir
+  resultsDir <- paste0("SCDS_results/SIMULATED", "/", simName)
+  dir.create(resultsDir, showWarnings=TRUE)
 
   #################
   # sciclone
@@ -83,9 +66,10 @@ for (simName in simNames){ #for each simulation
   sel <- colnames(activeSigs[,3:ncol(activeSigs)])[colSums(activeSigs[,3:ncol(activeSigs)]) > 0]
 
   # get signatures active for selection
-  allSigs <- read.delim(signature_file, header = T, stringsAsFactors = F)
+  #allSigs <- read.delim(signature_file, header = T, stringsAsFactors = F)
+  #allSigs <- setNames(data.frame(t(allSigs[,-1])), allSigs[,1])
   allSigs <- TrackSig:::load_sim_signatures(signature_file)
-  allSigs <- setNames(data.frame(t(allSigs[,-1])), allSigs[,1])
+  allSigs <- as.data.frame(t(allSigs))
   activeSigs <- allSigs[sel,]
 
   # collect colnames from active signatures for mutation types
@@ -132,21 +116,24 @@ for (simName in simNames){ #for each simulation
 
   # phis
   phis <- sC@clust$cluster.means
-  write.table(t(phis), file = sprintf("%s/%s/%s", resultsDir, simName, "phis.txt"), quote = F, row.names = F, col.names = F)
+  write.table(t(phis), file = sprintf("%s/%s", resultsDir, "phis.txt"), quote = F, row.names = F, col.names = F)
 
   # mixtures
   mixtures <- exposurePerCluster[ order(row.names(exposurePerCluster)), ]
   mixtures <- as.data.frame(t(mixtures))
   colnames(mixtures) <- phis
 
-  write.csv(mixtures, file = sprintf("%s/%s/%s", resultsDir, simName, "mixtures.csv"), quote = T, row.names = T, col.names = T)
+  write.csv(mixtures, file = sprintf("%s/%s", resultsDir, "mixtures.csv"), quote = T, row.names = T, col.names = T)
 
   # sig_exposures_per_mut
-
-
-
+  exposurePerMut$cluster <- NULL
+  write.table(exposurePerMut, file = sprintf("%s/%s", resultsDir, "sig_exposures_per_mut.txt"), quote = F, row.names = F, col.names = T)
 
   # plot
+
+  plotName <- sprintf("%s/%s", resultsDir, "trajectory.pdf")
+  TrackSig:::plot_signatures(mixtures*100, plot_name = plotName, phis = phis, mark_change_points = F,
+                  change_points = NULL, transition_points = NULL, scale=1.2, save = T)
 
 }
 
