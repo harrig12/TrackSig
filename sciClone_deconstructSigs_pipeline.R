@@ -7,6 +7,7 @@
 library(sciClone)
 library(tidyr)
 library(deconstructSigs)
+library(TrackSig)
 
 #setwd("~/Desktop/TrackSig_simulations/")
 getwd()
@@ -20,12 +21,29 @@ simNames <- simNames[sel]
 sim_activities_file <- "annotation/sim_active_in_sample.txt"
 signature_file <- "annotation/sigProfiler_SBS_signatures.txt"
 
-# outdirs
-scicloneDir <- "sciclone_results"
-deconstructSigsDir <- "deconstructSigs_results"
+# outdir
+resultsDir <- "SCDS_results/SIMULATED"
+dir.create(resultsDir, showWarnings=FALSE)
 
-dir.create(scicloneDir, showWarnings=FALSE)
-dir.create(deconstructSigsDir, showWarnings=FALSE)
+
+#################
+# helper functions
+#################
+
+writeMixtures <- function(){
+
+}
+
+
+writeExposuresPerMut <- function(){
+
+}
+
+writePlot <- function(){
+
+}
+
+#####################################################################################
 
 # to be parallelized
 for (simName in simNames){ #for each simulation
@@ -49,15 +67,11 @@ for (simName in simNames){ #for each simulation
   cnaTable <- read.table(sprintf("data/%s/%s_cna.txt", simName, simName), header = T)
 
   # sciclone - compute clusters
-  sC <- sciClone::sciClone(vafTable[,(1:6)], copyNumberCalls = cnaTable, sampleNames = simName,
+  sC <- sciClone::sciClone(vafTable[, (1:6)], copyNumberCalls = cnaTable, sampleNames = simName,
                            minimumDepth = 20, useSexChrs = FALSE)
-
-  writeClusterSummaryTable(sC, sprintf("%s/summary_%s", scicloneDir, simName))
-  writeClusterTable(sC, sprintf("%s/clusters_%s", scicloneDir, simName))
 
   # get cluster assignments
   vafTable$cluster <- sC@clust$cluster.assignments
-
 
   #################
   # deconstructSigs
@@ -66,46 +80,73 @@ for (simName in simNames){ #for each simulation
   # select by sample name and activity
   activeSigs <- read.delim(sim_activities_file, header = T, stringsAsFactors = F)
   activeSigs <- activeSigs[activeSigs$Sample_Name == simName,]
-  sel <- colSums(activeSigs[,3:ncol(activeSigs)]) > 0
+  sel <- colnames(activeSigs[,3:ncol(activeSigs)])[colSums(activeSigs[,3:ncol(activeSigs)]) > 0]
 
   # get signatures active for selection
   allSigs <- read.delim(signature_file, header = T, stringsAsFactors = F)
+  allSigs <- TrackSig:::load_sim_signatures(signature_file)
   allSigs <- setNames(data.frame(t(allSigs[,-1])), allSigs[,1])
   activeSigs <- allSigs[sel,]
 
+  # collect colnames from active signatures for mutation types
+  allMutTypes <- data.frame(rep(0, length(colnames(activeSigs))), row.names = colnames(activeSigs))
+
   # get mutation type counts for simulation
-  vafTable$mut_type <- apply(vafTable[, c("tri", "alt")], MARGIN = 1, paste, collapse = ">")
+  vafTable$mutType <- apply(vafTable[, c("ref", "alt", "tri")], MARGIN = 1, paste, collapse = "_")
+
+  exposurePerCluster <- NULL
+  exposurePerMut <- vafTable[,c("chr","pos","cluster")]
+  exposurePerMut[,row.names(activeSigs)] <- NA
 
   # subset on custer and deconstructSigs
   for (cluster_i in unique(vafTable$cluster)){
-    clusterVafTable <- subset(vafTable, cluster == cluster_i)
 
     # subset mutations for cluster
-    typesTable <- as.data.frame(t(as.matrix(table(clusterVafTable$mut_type))))
-    typesTable[1,] <- apply(typesTable[1,], MARGIN = 1, as.numeric)
-    rownames(typesTable) <- sprintf("%s_cluster%s", simName, cluster_i)
+    clusterVafTable <- subset(vafTable, cluster == cluster_i)
 
-    # some mutation types could be missing from simulation randomness and subsetting
-    simTypes <- colnames(typesTable)
-    activeTypes <- colnames(activeSigs)
-    if (length(simTypes) < length(activeTypes)){
+    # tabulate present mutation types
+    activeMutTypes <- as.data.frame(table(clusterVafTable$mutType), row.names = 1)
+    typesTable <- allMutTypes
+    typesTable[row.names(activeMutTypes), ] <- activeMutTypes
 
-      # find which missing
-      nDiff <- length(activeTypes) - length(simTypes)
+    colnames(typesTable) <- sprintf("%s_cluster%s", simName, cluster_i)
 
-      # add them into typesTable with frequency 0
-      missingTypes <- activeTypes[!(activeTypes %in% simTypes)]
+    # transpose for deconstructSigs input
+    typesTable <- as.data.frame(t(typesTable))
 
-      for (missingType in missingTypes){ #can apply work here?
-        typesTable[[missingType]] <- 0
-      }
-    }
-
+    # find signatures with deconstructSigs
     foundSigs <- whichSignatures(tumor.ref = typesTable, contexts.needed = T, signatures.ref = activeSigs)
-    write.table(foundSigs$weights, sprintf("%s/signatures_%s", deconstructSigsDir, simName),
-                append = T, quote = FALSE, row.names = FALSE)
+    #write.table(foundSigs$weights, sprintf("%s/signatures_%s", resultsDir, simName), append = T, quote = FALSE, row.names = FALSE)
+
+    exposures_i <- foundSigs$weights
+    rownames(exposures_i) <- cluster_i
+
+    exposurePerCluster <- rbind(exposurePerCluster, exposures_i)
+    exposurePerMut[exposurePerMut$cluster == cluster_i, colnames(exposures_i)] <- exposures_i
+
   }
 
+  #################
+  # output
+  #################
+
+  # phis
+  phis <- sC@clust$cluster.means
+  write.table(t(phis), file = sprintf("%s/%s/%s", resultsDir, simName, "phis.txt"), quote = F, row.names = F, col.names = F)
+
+  # mixtures
+  mixtures <- exposurePerCluster[ order(row.names(exposurePerCluster)), ]
+  mixtures <- as.data.frame(t(mixtures))
+  colnames(mixtures) <- phis
+
+  write.csv(mixtures, file = sprintf("%s/%s/%s", resultsDir, simName, "mixtures.csv"), quote = T, row.names = T, col.names = T)
+
+  # sig_exposures_per_mut
+
+
+
+
+  # plot
 
 }
 
