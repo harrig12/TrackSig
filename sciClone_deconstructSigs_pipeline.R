@@ -53,8 +53,6 @@ for (simName in simNames){ #for each simulation
   sC <- sciClone::sciClone(vafTable[, (1:6)], copyNumberCalls = cnaTable, sampleNames = simName,
                            minimumDepth = 20, useSexChrs = FALSE)
 
-  stopifnot(length(unique(sC@clust$cluster.assignments)) == length(sC@clust$cluster.means))
-  
   # get cluster assignments
   vafTable$cluster <- sC@clust$cluster.assignments
 
@@ -86,7 +84,9 @@ for (simName in simNames){ #for each simulation
 
   # subset on custer and deconstructSigs
   for (cluster_i in unique(vafTable$cluster)){
-
+    if (cluster_i == 0) {
+      next
+    }
     # subset mutations for cluster
     clusterVafTable <- subset(vafTable, cluster == cluster_i)
 
@@ -116,6 +116,8 @@ for (simName in simNames){ #for each simulation
   # output
   #################
 
+  stopifnot(length(sC@clust$cluster.means) == nrow(exposurePerCluster))
+  
   # phis
   phis <- sC@clust$cluster.means
   write.table(t(phis), file = sprintf("%s/%s", resultsDir, "phis.txt"), quote = F, row.names = F, col.names = F)
