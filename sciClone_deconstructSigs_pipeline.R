@@ -21,11 +21,13 @@ simNames <- simNames[sel]
 sim_activities_file <- "annotation/sim_active_in_sample.txt"
 signature_file <- "annotation/sigProfiler_SBS_signatures.txt"
 
+# binSize parameter
+binSize <- 100
 
+times <- c()
 # to be parallelized
 for (simName in simNames){ #for each simulation
-
-  print(simName)
+  tic()
 
   # outdir
   resultsDir <- paste0("SCDS_results/SIMULATED", "/", simName)
@@ -121,7 +123,11 @@ for (simName in simNames){ #for each simulation
   # mixtures
   mixtures <- exposurePerCluster[ order(row.names(exposurePerCluster)), ]
   mixtures <- as.data.frame(t(mixtures))
-  colnames(mixtures) <- phis
+
+  # repeat columns proportional to mutations per cluster
+  mutPerClust <- c(table(vafTable$cluster)) %/% binSize
+
+
 
   write.csv(mixtures, file = sprintf("%s/%s", resultsDir, "mixtures.csv"), quote = T, row.names = T, col.names = T)
 
@@ -135,6 +141,8 @@ for (simName in simNames){ #for each simulation
   TrackSig:::plot_signatures(mixtures*100, plot_name = plotName, phis = phis, mark_change_points = F,
                   change_points = NULL, transition_points = NULL, scale=1.2, save = T)
 
+  toc(log=T)
+  beep(2)
 }
 
 
