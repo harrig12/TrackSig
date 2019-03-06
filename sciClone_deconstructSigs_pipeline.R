@@ -21,11 +21,13 @@ simNames <- simNames[sel]
 sim_activities_file <- "annotation/sim_active_in_sample.txt"
 signature_file <- "annotation/sigProfiler_SBS_signatures.txt"
 
+# binSize parameter
+binSize <- 100
 
+times <- c()
 # to be parallelized
 for (simName in simNames){ #for each simulation
-
-  print(simName)
+  tic()
 
   # outdir
   resultsDir <- paste0("SCDS_results/SIMULATED", "/", simName)
@@ -92,7 +94,9 @@ for (simName in simNames){ #for each simulation
 
   # subset on custer and deconstructSigs
   for (cluster_i in unique(vafTable$cluster)){
-
+    if (cluster_i == 0) {
+      next
+    }
     # subset mutations for cluster
     clusterVafTable <- subset(vafTable, cluster == cluster_i)
 
@@ -122,6 +126,8 @@ for (simName in simNames){ #for each simulation
   # output
   #################
 
+  stopifnot(length(sC@clust$cluster.means) == nrow(exposurePerCluster))
+  
   # phis
   phis <- sC@clust$cluster.means
   write.table(t(phis), file = sprintf("%s/%s", resultsDir, "phis.txt"), quote = F, row.names = F, col.names = F)
@@ -129,7 +135,11 @@ for (simName in simNames){ #for each simulation
   # mixtures
   mixtures <- exposurePerCluster[ order(row.names(exposurePerCluster)), ]
   mixtures <- as.data.frame(t(mixtures))
-  colnames(mixtures) <- phis
+
+  # repeat columns proportional to mutations per cluster
+  mutPerClust <- c(table(vafTable$cluster)) %/% binSize
+
+
 
   write.csv(mixtures, file = sprintf("%s/%s", resultsDir, "mixtures.csv"), quote = T, row.names = T, col.names = T)
 
@@ -137,12 +147,15 @@ for (simName in simNames){ #for each simulation
   exposurePerMut$cluster <- NULL
   write.table(exposurePerMut, file = sprintf("%s/%s", resultsDir, "sig_exposures_per_mut.txt"), quote = F, row.names = F, col.names = T)
 
-  # plot
+  sc.plot1d(sC, sprintf("%s/%s", resultsDir, "sciclone.pdf"))
 
+  # plot
   plotName <- sprintf("%s/%s_%s", resultsDir, simName, "trajectory.pdf")
   TrackSig:::plot_signatures(mixtures*100, plot_name = plotName, phis = phis, mark_change_points = F,
                   change_points = NULL, transition_points = NULL, scale=1.2, save = T)
 
+  toc(log=T)
+  beep(2)
 }
 
 
