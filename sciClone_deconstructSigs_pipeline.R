@@ -70,7 +70,15 @@ for (simName in simNames){ #for each simulation
   #allSigs <- setNames(data.frame(t(allSigs[,-1])), allSigs[,1])
   allSigs <- TrackSig:::load_sim_signatures(signature_file)
   allSigs <- as.data.frame(t(allSigs))
+
+  #check signature names line up
+  if (all(sel %in% rownames(allSigs)) == FALSE){
+    stop("active signatures and reference signature names inconsistant")
+  }
+
   activeSigs <- allSigs[sel,]
+
+
 
   # collect colnames from active signatures for mutation types
   allMutTypes <- data.frame(rep(0, length(colnames(activeSigs))), row.names = colnames(activeSigs))
