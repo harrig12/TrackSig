@@ -39,7 +39,7 @@ sed 's/^...//' tmp | sort -n > tmp_tri
 sort -n $sim_dir/"$simulation_name"_vaf.txt > tmp_vaf
 
 # put together mutation_types file
-sort -k 3 -r <(paste <(cut -f1,2 tmp_tri) <(cut -d= -f2 tmp_vaf) <(cut -f3,4,5 tmp_tri)) | cat > "$simulation_name".mut_types.txt
+sort -k 3 -r -n <(paste <(cut -f1,2 tmp_tri) <(cut -d= -f2 tmp_vaf) <(cut -f3,4,5 tmp_tri)) | cat > "$simulation_name".mut_types.txt
 
 # restore chr prefix
 ex -sc '%s/^/chr/|wq' "$simulation_name".mut_types.txt
