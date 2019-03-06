@@ -2,7 +2,7 @@
 # TrackSig Simulations
 #################
 library(TrackSig)
-source("sim_pipeline_helpers.R")
+source("~/Documents/Cait-TrackSig/sim_pipeline_helpers.R")
 
 # generate simulations
 #setwd("~/Desktop/TrackSig_simulations/")
@@ -44,6 +44,7 @@ simulations <- simulations[sel]
 
 # simulations by bin size
 bin_sizes <- c(30, 75, 100, 156, 213, 250, 300)
+size_i = 6
 
 # TrackSig - set options (same variables as in in header.R)
 TrackSig.options(purity_file = sim_purity_file,
@@ -56,7 +57,7 @@ TrackSig.options(purity_file = sim_purity_file,
                  cancer_type_signatures = FALSE,
                  pcawg_format = TRUE,
                  DIR_RESULTS = tracksig_results_dir,
-                 bin_size = 30)
+                 bin_size = bin_sizes[size_i])
 
 
 # tracksig - make counts
@@ -71,7 +72,7 @@ compute_signatures_for_all_examples(countsDir = "data/counts", bootstrapDir = "d
 
 # tracksig - get exposures
 extract_exposures_per_mutation(activities_dir = paste0(tracksig_results_dir, "/SIMULATED/"),
-                               sorted_mutations_dir = "data/mut_types/", bin_size = 100)
+                               sorted_mutations_dir = "data/mut_types/", bin_size = bin_sizes[size_i])
 
 # tracksig - bootstrap not functional yet
 #compute_errorbars_for_all_examples()

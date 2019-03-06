@@ -138,7 +138,6 @@ for (simName in simNames){ #for each simulation
   mutPerClust <- c(table(vafTable$cluster)) %/% binSize
 
 
-
   write.csv(mixtures, file = sprintf("%s/%s", resultsDir, "mixtures.csv"), quote = T, row.names = T, col.names = T)
 
   # sig_exposures_per_mut
