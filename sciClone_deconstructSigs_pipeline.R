@@ -27,7 +27,7 @@ binSize <- 100
 times <- c()
 # to be parallelized
 for (simName in simNames){ #for each simulation
-  tic()
+  #tic()
 
   # outdir
   resultsDir <- paste0("SCDS_results/SIMULATED", "/", simName)
@@ -80,8 +80,6 @@ for (simName in simNames){ #for each simulation
 
   activeSigs <- allSigs[sel,]
 
-
-
   # collect colnames from active signatures for mutation types
   allMutTypes <- data.frame(rep(0, length(colnames(activeSigs))), row.names = colnames(activeSigs))
 
@@ -127,7 +125,7 @@ for (simName in simNames){ #for each simulation
   #################
 
   stopifnot(length(sC@clust$cluster.means) == nrow(exposurePerCluster))
-  
+
   # phis
   phis <- sC@clust$cluster.means
   write.table(t(phis), file = sprintf("%s/%s", resultsDir, "phis.txt"), quote = F, row.names = F, col.names = F)
@@ -154,8 +152,8 @@ for (simName in simNames){ #for each simulation
   TrackSig:::plot_signatures(mixtures*100, plot_name = plotName, phis = phis, mark_change_points = F,
                   change_points = NULL, transition_points = NULL, scale=1.2, save = T)
 
-  toc(log=T)
-  beep(2)
+  #toc(log=T)
+  #beep(2)
 }
 
 
