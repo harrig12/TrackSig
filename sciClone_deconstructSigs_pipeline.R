@@ -21,16 +21,29 @@ simNames <- simNames[sel]
 sim_activities_file <- "annotation/sim_active_in_sample.txt"
 signature_file <- "annotation/sigProfiler_SBS_signatures.txt"
 
+# shuffle
+simNames <- sample(simNames, length(simNames))
+#simNames <- simNames[(i*60):((i+1)*60)]
 
+# binSize parameter
+binSize <- 100
+
+times <- c()
 # to be parallelized
 for (simName in simNames){ #for each simulation
 
-  print(simName)
+  print(sprintf("Processing %s: %s/%s", 
+    simName, which(simNames == simName), length(simNames)))
+  #tic()
 
   # outdir
   resultsDir <- paste0("SCDS_results/SIMULATED", "/", simName)
   dir.create(resultsDir, showWarnings=FALSE, recursive = TRUE)
 
+  if (file.exists(sprintf("%s/%s", resultsDir, "mixtures.csv"))) {
+    print(sprintf("Skipping %s...", simName))
+    next
+  }
   #################
   # sciclone
   #################
@@ -50,8 +63,11 @@ for (simName in simNames){ #for each simulation
   cnaTable <- read.table(sprintf("data/%s/%s_cna.txt", simName, simName), header = T)
 
   # sciclone - compute clusters
+  # If using non-zero minimumDepth, sC@clust$cluster.assignments is filtered by depth, 
+  # so it has less elements than  vafTable$cluster
+  # I don't know what to do with this -- I didn't find the list of remaining mutations in sC object
   sC <- sciClone::sciClone(vafTable[, (1:6)], copyNumberCalls = cnaTable, sampleNames = simName,
-                           minimumDepth = 20, useSexChrs = FALSE)
+                           minimumDepth = 0, useSexChrs = FALSE)
 
   # get cluster assignments
   vafTable$cluster <- sC@clust$cluster.assignments
@@ -70,6 +86,12 @@ for (simName in simNames){ #for each simulation
   #allSigs <- setNames(data.frame(t(allSigs[,-1])), allSigs[,1])
   allSigs <- TrackSig:::load_sim_signatures(signature_file)
   allSigs <- as.data.frame(t(allSigs))
+
+  #check signature names line up
+  if (all(sel %in% rownames(allSigs)) == FALSE){
+    stop("active signatures and reference signature names inconsistant")
+  }
+
   activeSigs <- allSigs[sel,]
 
   # collect colnames from active signatures for mutation types
@@ -117,7 +139,7 @@ for (simName in simNames){ #for each simulation
   #################
 
   stopifnot(length(sC@clust$cluster.means) == nrow(exposurePerCluster))
-  
+
   # phis
   phis <- sC@clust$cluster.means
   write.table(t(phis), file = sprintf("%s/%s", resultsDir, "phis.txt"), quote = F, row.names = F, col.names = F)
@@ -125,21 +147,28 @@ for (simName in simNames){ #for each simulation
   # mixtures
   mixtures <- exposurePerCluster[ order(row.names(exposurePerCluster)), ]
   mixtures <- as.data.frame(t(mixtures))
-  colnames(mixtures) <- phis
 
-  write.csv(mixtures, file = sprintf("%s/%s", resultsDir, "mixtures.csv"), quote = T, row.names = T, col.names = T)
+  # repeat columns proportional to mutations per cluster
+  mutPerClust <- c(table(vafTable$cluster)) %/% binSize
+
+
+  write.csv(mixtures, file = sprintf("%s/%s", resultsDir, "mixtures.csv"), quote = T, row.names = T)
 
   # sig_exposures_per_mut
   exposurePerMut$cluster <- NULL
-  write.table(exposurePerMut, file = sprintf("%s/%s", resultsDir, "sig_exposures_per_mut.txt"), quote = F, row.names = F, col.names = T)
+  exposurePerMut[,"chr"] <- paste0("chr", exposurePerMut[,"chr"])
+  colnames(exposurePerMut)[c(1,2)] <- c("chromosome" ,"start")
+  write.table(exposurePerMut, file = sprintf("%s/%s", resultsDir, "sig_exposures_per_mut.txt"), sep = "\t", row.names=F, quote=F)
 
-  sc.plot1d(sC, sprintf("%s/%s", resultsDir, "sciclone.pdf"))
+  sc.plot1d(sC, sprintf("%s/%s_%s", resultsDir, simName, "sciclone.pdf"))
 
   # plot
   plotName <- sprintf("%s/%s_%s", resultsDir, simName, "trajectory.pdf")
-  TrackSig:::plot_signatures(mixtures*100, plot_name = plotName, phis = phis, mark_change_points = F,
+  TrackSig:::plot_signatures(mixtures*100, plot_name = plotName, phis = phis * 2, mark_change_points = F,
                   change_points = NULL, transition_points = NULL, scale=1.2, save = T)
 
+  #toc(log=T)
+  #beep(2)
 }
 
 
