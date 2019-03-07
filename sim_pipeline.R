@@ -43,47 +43,63 @@ sel <- grep(x = simulations, "^Simulation")
 simulations <- simulations[sel]
 
 # simulations by bin size
-bin_sizes <- c(30, 75, 100, 156, 213, 250, 300)
-size_i = 6
+bin_sizes <- round(seq(30, 300, length.out = 8), 0)
 
-# TrackSig - set options (same variables as in in header.R)
-TrackSig.options(purity_file = sim_purity_file,
-                 signature_file = "annotation/sigProfiler_SBS_signatures.txt",
-                 trinucleotide_file = "annotation/trinucleotide.txt",
-                 active_signatures_file = sim_activities_file,
-                 tumortype_file = sim_tumortype_file,
-                 sig_amount = "onlyKnownSignatures",
-                 compute_bootstrap = FALSE,
-                 cancer_type_signatures = FALSE,
-                 pcawg_format = TRUE,
-                 DIR_RESULTS = tracksig_results_dir,
-                 bin_size = bin_sizes[size_i])
+for (size_i in seq_along(bin_sizes)){
+  # TrackSig - set options (same variables as in in header.R)
+  TrackSig.options(purity_file = sim_purity_file,
+                   signature_file = "annotation/sigProfiler_SBS_signatures.txt",
+                   trinucleotide_file = "annotation/trinucleotide.txt",
+                   active_signatures_file = sim_activities_file,
+                   tumortype_file = sim_tumortype_file,
+                   sig_amount = "onlyKnownSignatures",
+                   compute_bootstrap = FALSE,
+                   cancer_type_signatures = FALSE,
+                   pcawg_format = TRUE,
+                   DIR_RESULTS = tracksig_results_dir,
+                   bin_size = bin_sizes[size_i])
 
 
-# tracksig - make counts
-for (sim_i in 1:length(simulations)){
-  print(sprintf("%s", simulations[sim_i]))
-  run_simulation(simulations[sim_i])
+  # tracksig - make counts
+  for (sim_i in 1:length(simulations)){
+    print(sprintf("%s", simulations[sim_i]))
+    run_simulation(simulations[sim_i])
 
+  }
+
+  # tracksig - compute mutational signatures
+  compute_signatures_for_all_examples(countsDir = "data/counts", bootstrapDir = "data/bootstrap/")
+
+  # tracksig - get exposures
+  extract_exposures_per_mutation(activities_dir = paste0(tracksig_results_dir, "/SIMULATED/"),
+                                 sorted_mutations_dir = "data/mut_types/", bin_size = bin_sizes[size_i])
+
+  # tracksig - bootstrap not functional yet
+  #compute_errorbars_for_all_examples()
+
+  res <- compare_simulation_results(simulations,
+      ground_truth_dir = outdir,
+      method_results_dir = paste0(tracksig_results_dir, "/SIMULATED/"),
+      res_file_name = sprintf("TrackSig_simulation_results_post%d.txt", bin_sizes[size_i]))
+
+  pdf(sprintf("TrackSig_KL_post%d.pdf", bin_sizes[size_i]), width = 5, height=5)
+
+  # ploting arguments
+  res$pch <- rep_len(c(20, 5), length.out = dim(res)[1])
+  res$col <- rep_len(c(2,2,3,3,4,4,5,5,6,6,7,7,8,8), length.out = dim(res)[1])
+
+  plot(res$kl, res$abs_diff_max, main=sprintf("TrackSig KL post_bin_size = %d", bin_sizes[size_i]),
+     xlab="KL", ylab="max abs diff", pch = res$pch, col = res$col)
+
+  legend("bottomright", pch = c(20, 5, rep(15, 8)),
+         col = c(1, 1, 2:8), legend = c("depth 100", "depth 1000", as.character(bin_sizes)))
+
+  #res$labels <- strsplit(as.character(res$sim), "^Simulation_")
+  #res$labels <- apply(res["labels"], MARGIN = 1, FUN=unlist)[2,]
+  #res$labels <- strsplit(res$labels, "[[:digit:]]_[[:alnum:]]*$")
+  #res$labels <- apply(res["labels"], MARGIN = 1, FUN=unlist)
+  #
+  #text(res$kl, res$abs_diff_max, labels = res$labels, cex = 0.8, pos = 4)
+
+  dev.off()
 }
-
-# tracksig - compute mutational signatures
-compute_signatures_for_all_examples(countsDir = "data/counts", bootstrapDir = "data/bootstrap/")
-
-# tracksig - get exposures
-extract_exposures_per_mutation(activities_dir = paste0(tracksig_results_dir, "/SIMULATED/"),
-                               sorted_mutations_dir = "data/mut_types/", bin_size = bin_sizes[size_i])
-
-# tracksig - bootstrap not functional yet
-#compute_errorbars_for_all_examples()
-
-res <- compare_simulation_results(simulations,
-    ground_truth_dir = outdir,
-    method_results_dir = paste0(tracksig_results_dir, "/SIMULATED/"),
-    res_file_name = "TrackSig_simulation_results.txt")
-
-pdf("TrackSig_KL.pdf", width = 5, height=5)
-plot(res$kl, res$abs_diff_max, main="TrackSig KL",
-   xlab="KL", ylab="max abs diff")
-dev.off()
-
