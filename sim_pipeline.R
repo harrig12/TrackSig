@@ -2,7 +2,6 @@
 # TrackSig Simulations
 #################
 library(TrackSig)
-source("sim_pipeline_helpers.R")
 
 # generate simulations
 #setwd("~/Desktop/TrackSig_simulations/")
@@ -59,7 +58,6 @@ TrackSig.options(purity_file = sim_purity_file,
 for (sim_i in 1:length(simulations)){
   print(sprintf("%s", simulations[sim_i]))
   run_simulation(simulations[sim_i])
-
 }
 
 # tracksig - compute mutational signatures
@@ -72,13 +70,5 @@ extract_exposures_per_mutation(activities_dir = paste0(tracksig_results_dir, "/S
 # tracksig - bootstrap not functional yet
 #compute_errorbars_for_all_examples()
 
-res <- compare_simulation_results(simulations, 
-    ground_truth_dir = outdir, 
-    method_results_dir = paste0(tracksig_results_dir, "/SIMULATED/"),
-    res_file_name = "TrackSig_simulation_results.txt")
 
-pdf("TrackSig_KL.pdf", width = 5, height=5)
-plot(res$kl, res$abs_diff_max, main="TrackSig KL", 
-   xlab="KL", ylab="max abs diff")
-dev.off()
 
