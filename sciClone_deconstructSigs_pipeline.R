@@ -34,6 +34,7 @@ for (simName in simNames){ #for each simulation
 
   print(sprintf("Processing %s: %s/%s", 
     simName, which(simNames == simName), length(simNames)))
+
   #tic()
 
   # outdir
@@ -150,7 +151,6 @@ for (simName in simNames){ #for each simulation
 
   # repeat columns proportional to mutations per cluster
   mutPerClust <- c(table(vafTable$cluster)) %/% binSize
-
 
   write.csv(mixtures, file = sprintf("%s/%s", resultsDir, "mixtures.csv"), quote = T, row.names = T)
 

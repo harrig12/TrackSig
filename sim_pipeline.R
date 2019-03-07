@@ -2,6 +2,7 @@
 # TrackSig Simulations
 #################
 library(TrackSig)
+#source("~/Documents/Cait-TrackSig/sim_pipeline_helpers.R")
 
 # generate simulations
 #setwd("~/Desktop/TrackSig_simulations/")
@@ -41,34 +42,35 @@ simulations <- list.files(outdir)
 sel <- grep(x = simulations, "^Simulation")
 simulations <- simulations[sel]
 
-# TrackSig - set options (same variables as in in header.R)
-TrackSig.options(purity_file = sim_purity_file,
-                 signature_file = "annotation/sigProfiler_SBS_signatures.txt",
-                 trinucleotide_file = "annotation/trinucleotide.txt",
-                 active_signatures_file = sim_activities_file,
-                 tumortype_file = sim_tumortype_file,
-                 sig_amount = "onlyKnownSignatures",
-                 compute_bootstrap = FALSE,
-                 cancer_type_signatures = FALSE,
-                 pcawg_format = TRUE,
-                 DIR_RESULTS = tracksig_results_dir)
+# simulations by bin size
+bin_sizes <- c(25, 50, 100, 125, 250)
 
+for (size_i in seq_along(bin_sizes)){
+  # TrackSig - set options (same variables as in in header.R)
+  TrackSig.options(purity_file = sim_purity_file,
+                   signature_file = "annotation/sigProfiler_SBS_signatures.txt",
+                   trinucleotide_file = "annotation/trinucleotide.txt",
+                   active_signatures_file = sim_activities_file,
+                   tumortype_file = sim_tumortype_file,
+                   sig_amount = "onlyKnownSignatures",
+                   compute_bootstrap = FALSE,
+                   cancer_type_signatures = FALSE,
+                   pcawg_format = TRUE,
+                   DIR_RESULTS = tracksig_results_dir,
+                   bin_size = bin_sizes[size_i])
 
-# tracksig - make counts
-for (sim_i in 1:length(simulations)){
-  print(sprintf("%s", simulations[sim_i]))
-  run_simulation(simulations[sim_i])
+  # tracksig - make counts
+  for (sim_i in 1:length(simulations)){
+    print(sprintf("%s", simulations[sim_i]))
+    run_simulation(simulations[sim_i])
+
+  }
+
+  # tracksig - compute mutational signatures
+  compute_signatures_for_all_examples(countsDir = "data/counts", bootstrapDir = "data/bootstrap/")
+
+  # tracksig - get exposures
+  extract_exposures_per_mutation(activities_dir = paste0(tracksig_results_dir, "/SIMULATED/"),
+                                 sorted_mutations_dir = "data/mut_types/", bin_size = bin_sizes[size_i])
+
 }
-
-# tracksig - compute mutational signatures
-compute_signatures_for_all_examples(countsDir = "data/counts", bootstrapDir = "data/bootstrap/")
-
-# tracksig - get exposures
-extract_exposures_per_mutation(activities_dir = paste0(tracksig_results_dir, "/SIMULATED/"),
-                               sorted_mutations_dir = "data/mut_types/", bin_size = 100)
-
-# tracksig - bootstrap not functional yet
-#compute_errorbars_for_all_examples()
-
-
-
