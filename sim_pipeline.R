@@ -43,7 +43,7 @@ sel <- grep(x = simulations, "^Simulation")
 simulations <- simulations[sel]
 
 # simulations by bin size
-bin_sizes <- round(seq(30, 300, length.out = 8), 0)
+bin_sizes <- c(25, 50, 100, 125, 250)
 
 for (size_i in seq_along(bin_sizes)){
   # TrackSig - set options (same variables as in in header.R)
@@ -91,15 +91,17 @@ for (size_i in seq_along(bin_sizes)){
   plot(res$kl, res$abs_diff_max, main=sprintf("TrackSig KL post_bin_size = %d", bin_sizes[size_i]),
      xlab="KL", ylab="max abs diff", pch = res$pch, col = res$col)
 
-  legend("bottomright", pch = c(20, 5, rep(15, 8)),
-         col = c(1, 1, 2:8), legend = c("depth 100", "depth 1000", as.character(bin_sizes)))
+  pre_bin_sizes <- round(seq(30, 300, length.out = 8), 0)
 
-  #res$labels <- strsplit(as.character(res$sim), "^Simulation_")
-  #res$labels <- apply(res["labels"], MARGIN = 1, FUN=unlist)[2,]
-  #res$labels <- strsplit(res$labels, "[[:digit:]]_[[:alnum:]]*$")
-  #res$labels <- apply(res["labels"], MARGIN = 1, FUN=unlist)
-  #
-  #text(res$kl, res$abs_diff_max, labels = res$labels, cex = 0.8, pos = 4)
+  legend("bottomright", pch = c(20, 5, rep(15, 8)),
+         col = c(1, 1, 2:8), legend = c("depth 100", "depth 1000", as.character(pre_bin_sizes)))
+
+  res$labels <- strsplit(as.character(res$sim), "^Simulation_")
+  res$labels <- apply(res["labels"], MARGIN = 1, FUN=unlist)[2,]
+  res$labels <- strsplit(res$labels, "[[:digit:]]_[[:alnum:]]*$")
+  res$labels <- apply(res["labels"], MARGIN = 1, FUN=unlist)
+
+  text(res$kl, res$abs_diff_max, labels = res$labels, cex = 0.8, pos = 4)
 
   dev.off()
 }
