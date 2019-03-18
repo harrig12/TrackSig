@@ -1,6 +1,5 @@
 # scoringSim.R
 library(TrackSig)
-source("~/Documents/Cait-TrackSig/sim_pipeline_helpers.R")
 
 # generate simulations
 #setwd("~/Desktop/TrackSig_simulations/")
@@ -63,6 +62,9 @@ for (sim_i in 1:length(simulations)){
 
 }
 
+# show results for 3 liklihood functions; sig only, vaf only, sig+vaf
+
+
 # tracksig - compute mutational signatures
 compute_signatures_for_all_examples(countsDir = "data/counts", bootstrapDir = "data/bootstrap/")
 
@@ -73,10 +75,10 @@ extract_exposures_per_mutation(activities_dir = paste0(tracksig_results_dir, "/S
 # tracksig - bootstrap not functional yet
 #compute_errorbars_for_all_examples()
 
-res <- compare_simulation_results(simulations,
-                                  ground_truth_dir = outdir,
-                                  method_results_dir = paste0(tracksig_results_dir, "/SIMULATED/"),
-                                  res_file_name = "TS_KL_both_scoring_res.txt")
+res <- TrackSig:::compare_simulation_results(simulations,
+                                             ground_truth_dir = outdir,
+                                             method_results_dir = paste0(tracksig_results_dir, "/SIMULATED/"),
+                                             res_file_name = "TS_KL_both_scoring_res.txt")
 
 pdf("TrackSig_KL_both_scoring.pdf", width = 5, height=5)
 
