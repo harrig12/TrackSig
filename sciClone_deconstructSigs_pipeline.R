@@ -67,11 +67,35 @@ for (simName in simNames){ #for each simulation
   # If using non-zero minimumDepth, sC@clust$cluster.assignments is filtered by depth, 
   # so it has less elements than  vafTable$cluster
   # I don't know what to do with this -- I didn't find the list of remaining mutations in sC object
-  sC <- sciClone::sciClone(vafTable[, (1:6)], copyNumberCalls = cnaTable, sampleNames = simName,
-                           minimumDepth = 0, useSexChrs = FALSE)
+  skip_sim = FALSE
+  tryCatch({
+     sC <- sciClone::sciClone(vafTable[, (1:6)], copyNumberCalls = cnaTable, sampleNames = simName,
+                           minimumDepth = -1, useSexChrs = FALSE, clusterMethod = 'binomial.bmm')
 
-  # get cluster assignments
-  vafTable$cluster <- sC@clust$cluster.assignments
+    }, warning = function(war) {
+    }, error = function(err) {
+      print("Error in sciClone:")
+      print(err)
+      skip_sim = TRUE
+    }, finally = {
+   }) 
+
+  if (skip_sim) {
+    next
+  }
+
+ 
+ if (length(sC@clust$cluster.assignments) == nrow(vafTable)) {
+    # get cluster assignments
+    vafTable$cluster <- sC@clust$cluster.assignments
+  } else {
+     # Remove mutations with depth 0
+    vafTable <- vafTable[vafTable[,3] + vafTable[,4] >= 1,]
+    
+    # get cluster assignments
+    vafTable$cluster <- sC@clust$cluster.assignments
+  }
+
 
   #################
   # deconstructSigs
@@ -110,6 +134,7 @@ for (simName in simNames){ #for each simulation
     if (cluster_i == 0) {
       next
     }
+
     # subset mutations for cluster
     clusterVafTable <- subset(vafTable, cluster == cluster_i)
 
@@ -131,7 +156,9 @@ for (simName in simNames){ #for each simulation
     rownames(exposures_i) <- cluster_i
 
     exposurePerCluster <- rbind(exposurePerCluster, exposures_i)
-    exposurePerMut[exposurePerMut$cluster == cluster_i, colnames(exposures_i)] <- exposures_i
+
+    mut_cluster_idx <- exposurePerMut$cluster == cluster_i
+    exposurePerMut[mut_cluster_idx, colnames(exposures_i)] <- exposures_i[rep(1,sum(mut_cluster_idx)),]
 
   }
 
@@ -164,8 +191,11 @@ for (simName in simNames){ #for each simulation
 
   # plot
   plotName <- sprintf("%s/%s_%s", resultsDir, simName, "trajectory.pdf")
-  TrackSig:::plot_signatures(mixtures*100, plot_name = plotName, phis = phis * 2, mark_change_points = F,
-                  change_points = NULL, transition_points = NULL, scale=1.2, save = T)
+  
+  if (ncol(mixtures) > 1) {
+    TrackSig:::plot_signatures(mixtures*100, plot_name = plotName, phis = phis * 2, mark_change_points = F,
+                    change_points = NULL, transition_points = NULL, scale=1.2, save = T)
+  }
 
   #toc(log=T)
   #beep(2)
