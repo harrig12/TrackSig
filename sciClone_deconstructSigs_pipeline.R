@@ -21,18 +21,30 @@ simNames <- simNames[sel]
 sim_activities_file <- "annotation/sim_active_in_sample.txt"
 signature_file <- "annotation/sigProfiler_SBS_signatures.txt"
 
+# shuffle
+simNames <- sample(simNames, length(simNames))
+#simNames <- simNames[(i*60):((i+1)*60)]
+
 # binSize parameter
 binSize <- 100
 
 times <- c()
 # to be parallelized
 for (simName in simNames){ #for each simulation
+
+  print(sprintf("Processing %s: %s/%s", 
+    simName, which(simNames == simName), length(simNames)))
+
   #tic()
 
   # outdir
   resultsDir <- paste0("SCDS_results/SIMULATED", "/", simName)
   dir.create(resultsDir, showWarnings=FALSE, recursive = TRUE)
 
+  if (file.exists(sprintf("%s/%s", resultsDir, "mixtures.csv"))) {
+    print(sprintf("Skipping %s...", simName))
+    next
+  }
   #################
   # sciclone
   #################
@@ -52,11 +64,38 @@ for (simName in simNames){ #for each simulation
   cnaTable <- read.table(sprintf("data/%s/%s_cna.txt", simName, simName), header = T)
 
   # sciclone - compute clusters
-  sC <- sciClone::sciClone(vafTable[, (1:6)], copyNumberCalls = cnaTable, sampleNames = simName,
-                           minimumDepth = 20, useSexChrs = FALSE)
+  # If using non-zero minimumDepth, sC@clust$cluster.assignments is filtered by depth, 
+  # so it has less elements than  vafTable$cluster
+  # I don't know what to do with this -- I didn't find the list of remaining mutations in sC object
+  skip_sim = FALSE
+  tryCatch({
+     sC <- sciClone::sciClone(vafTable[, (1:6)], copyNumberCalls = cnaTable, sampleNames = simName,
+                           minimumDepth = -1, useSexChrs = FALSE, clusterMethod = 'binomial.bmm')
 
-  # get cluster assignments
-  vafTable$cluster <- sC@clust$cluster.assignments
+    }, warning = function(war) {
+    }, error = function(err) {
+      print("Error in sciClone:")
+      print(err)
+      skip_sim = TRUE
+    }, finally = {
+   }) 
+
+  if (skip_sim) {
+    next
+  }
+
+ 
+ if (length(sC@clust$cluster.assignments) == nrow(vafTable)) {
+    # get cluster assignments
+    vafTable$cluster <- sC@clust$cluster.assignments
+  } else {
+     # Remove mutations with depth 0
+    vafTable <- vafTable[vafTable[,3] + vafTable[,4] >= 1,]
+    
+    # get cluster assignments
+    vafTable$cluster <- sC@clust$cluster.assignments
+  }
+
 
   #################
   # deconstructSigs
@@ -95,6 +134,7 @@ for (simName in simNames){ #for each simulation
     if (cluster_i == 0) {
       next
     }
+
     # subset mutations for cluster
     clusterVafTable <- subset(vafTable, cluster == cluster_i)
 
@@ -116,7 +156,9 @@ for (simName in simNames){ #for each simulation
     rownames(exposures_i) <- cluster_i
 
     exposurePerCluster <- rbind(exposurePerCluster, exposures_i)
-    exposurePerMut[exposurePerMut$cluster == cluster_i, colnames(exposures_i)] <- exposures_i
+
+    mut_cluster_idx <- exposurePerMut$cluster == cluster_i
+    exposurePerMut[mut_cluster_idx, colnames(exposures_i)] <- exposures_i[rep(1,sum(mut_cluster_idx)),]
 
   }
 
@@ -137,19 +179,23 @@ for (simName in simNames){ #for each simulation
   # repeat columns proportional to mutations per cluster
   mutPerClust <- c(table(vafTable$cluster)) %/% binSize
 
-
-  write.csv(mixtures, file = sprintf("%s/%s", resultsDir, "mixtures.csv"), quote = T, row.names = T, col.names = T)
+  write.csv(mixtures, file = sprintf("%s/%s", resultsDir, "mixtures.csv"), quote = T, row.names = T)
 
   # sig_exposures_per_mut
   exposurePerMut$cluster <- NULL
-  write.table(exposurePerMut, file = sprintf("%s/%s", resultsDir, "sig_exposures_per_mut.txt"), quote = F, row.names = F, col.names = T)
+  exposurePerMut[,"chr"] <- paste0("chr", exposurePerMut[,"chr"])
+  colnames(exposurePerMut)[c(1,2)] <- c("chromosome" ,"start")
+  write.table(exposurePerMut, file = sprintf("%s/%s", resultsDir, "sig_exposures_per_mut.txt"), sep = "\t", row.names=F, quote=F)
 
-  sc.plot1d(sC, sprintf("%s/%s", resultsDir, "sciclone.pdf"))
+  sc.plot1d(sC, sprintf("%s/%s_%s", resultsDir, simName, "sciclone.pdf"))
 
   # plot
   plotName <- sprintf("%s/%s_%s", resultsDir, simName, "trajectory.pdf")
-  TrackSig:::plot_signatures(mixtures*100, plot_name = plotName, phis = phis, mark_change_points = F,
-                  change_points = NULL, transition_points = NULL, scale=1.2, save = T)
+  
+  if (ncol(mixtures) > 1) {
+    TrackSig:::plot_signatures(mixtures*100, plot_name = plotName, phis = phis * 2, mark_change_points = F,
+                    change_points = NULL, transition_points = NULL, scale=1.2, save = T)
+  }
 
   #toc(log=T)
   #beep(2)

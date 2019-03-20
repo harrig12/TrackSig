@@ -53,14 +53,14 @@ merge_signatures <- function(mixtures, sigs_to_merge) {
 }
 
 
-load_sim_signatures <- function(signature_file, trinucleotide_file) {
+load_sim_signatures <- function(signature_file) {
 	sigs_to_merge <- list()
 	sigs_to_merge[["SBS7"]] <- c("SBS7a", "SBS7b", "SBS7c", "SBS7d")
 	sigs_to_merge[["SBS17"]] <- c("SBS17a", "SBS17b")
-	sigs_to_merge[["SBS2+13"]] <- c("SBS2", "SBS13")
+	sigs_to_merge[["SBS2.13"]] <- c("SBS2", "SBS13")
 	sigs_to_merge[["SBS10"]] <- c("SBS10a", "SBS10b")
 
-  	names_trinucleotide <- read.table(trinucleotide_file, stringsAsFactors = F)
+  names_trinucleotide <- trinucleotide_internal
 	names_trinucleotide <- apply(names_trinucleotide, 1, function(x) { do.call("paste", c(as.list(x), sep = "_"))})
 
 	alex <- read.table(signature_file, stringsAsFactors = F, header=T)
@@ -222,7 +222,7 @@ generate_ccf_simulation <- function(
 		#  Report #variant, #reference, and avg CN for each mutation
 		data <- data.frame(n_alt_alleles, n_ref_alleles, total_CN, mut_alleles, mut_types, data.frame(cluster_sigs), stringsAsFactors = F)
 		if ("SBS2.13" %in% colnames(data)) {
-      		colnames(data)[colnames(data) == "SBS2.13"] = "SBS2+13"
+      		colnames(data)[colnames(data) == "SBS2.13"] = "SBS2.13"
 		}
 
 		##################
@@ -296,9 +296,14 @@ save_as_vcf <- function(data, chrom, pos, filename) {
 	tri_data <- data.frame(chrom, pos, ref, alt, tri)
 	colnames(tri_data) <- c("chromosome", "start", "ref", "alt", "tri")
 
+	scicloneDS_data <- data.frame(chrom, pos, data$n_ref_alleles, data$n_alt_alleles,
+	                            data$n_alt_alleles / (data$n_ref_alleles + data$n_alt_alleles), ref, alt, tri)
+	colnames(scicloneDS_data) <- c("chr", "pos", "ref_reads", "var_reads", "vaf", "ref", "alt", "tri")
+
 	write.table(vcf_data, file = paste0(filename, ".vcf"), sep = "\t", row.names=F, quote=F)
 	write.table(cna_data, file = paste0(filename, "_cna.txt"), sep = "\t", row.names=F, quote=F)
 	write.table(tri_data, file = paste0(filename, "_tri.txt"), sep = "\t", row.names=F, quote=F)
+	write.table(scicloneDS_data, file = paste0(filename, "_scicloneDS.txt"), sep = "\t", row.names=F, quote=F)
 }
 
 
@@ -334,16 +339,17 @@ write_sim_annotation <- function(simulation_name, sig_activities, sig_header,
 sample_sigs_and_activities <- function(meaningful_sig1, meaningful_sig2, sig1_range=c(0.2, 0.7)) {
 	exposure_time_sig = runif(1, min=0.03, max=0.1)
 	cluster_sigs = list("SBS1" = exposure_time_sig)
+	cluster_sigs["SBS5"] =  runif(1, min= 0.05, max= 0.15)
+	remaining_activity = 1 - exposure_time_sig - cluster_sigs[["SBS5"]]
 
-	meaningful_sig_activity1 = runif(1, min=sig1_range[1], max=sig1_range[2])
+	meaningful_sig_activity1 = runif(1, min=sig1_range[1], 
+										max=min(remaining_activity, sig1_range[2]))
 
 	# meaningful_sig_activity2 = runif(1,
 	# 	min= min(0.1, 1- exposure_time_sig - meaningful_sig_activity1),
 	# 	max= 1- exposure_time_sig - meaningful_sig_activity1)
 
 	# cluster_sigs["SBS5"] = 1 - exposure_time_sig - meaningful_sig_activity1 - meaningful_sig_activity2
-
-	cluster_sigs["SBS5"] =  runif(1, min= 0.05, max= 0.15)
 
 	meaningful_sig_activity2 = 1 - exposure_time_sig - meaningful_sig_activity1 - cluster_sigs[["SBS5"]]
 
@@ -385,13 +391,12 @@ create_simulation_set <- function(outdir = "simulations", mut_per_sim = 5000,
                                   sim_purity_file = "annotation/sim_purity.txt",
                                   sim_tumortype_file = "annotation/sim_tumortypes.txt",
                                   signature_file = "annotation/sigProfiler_SBS_signatures.txt",
-                                  trinucleotide_file = "annotation/trinucleotide.txt",
                                   rewrite_annotations=T) {
 
 	dir.create(outdir, showWarnings = FALSE)
 	set.seed(2019)
 
-	signature_def = load_sim_signatures(signature_file, trinucleotide_file)
+	signature_def = load_sim_signatures(signature_file)
 
 	if (rewrite_annotations) {
 	  # remove simulation annotations (rebuilt upon simulation) and create new ones
@@ -413,18 +418,26 @@ create_simulation_set <- function(outdir = "simulations", mut_per_sim = 5000,
 		            col.names = F, row.names = F, quote = F, sep = "\t")
 	}
 
-	sim_list = c()
-    print("Simulation type 0a: one cluster")
+  sim_list = c()
+
+  #meaningful_sig_list = c("SBS2.13", "SBS3", "SBS4", "SBS6", "SBS7", "SBS9")
+  meaningful_sig_list<-  c("SBS3", "SBS4", "SBS6", "SBS8", "SBS9",
+		"SBS11", "SBS12", "SBS14", "SBS15", "SBS16", "SBS18", "SBS19",
+		"SBS20", "SBS21", "SBS22", "SBS23", "SBS24", "SBS25", "SBS26",
+		"SBS27", "SBS28", "SBS29", "SBS30", "SBS31", "SBS32", "SBS33",
+		"SBS34", "SBS35", "SBS36", "SBS37", "SBS38", "SBS39", "SBS40",
+		"SBS7", "SBS17", "SBS2.13", "SBS10")
+
+  print("Simulation type 0a: one cluster")
 	# signatures change in one cluster but not in the other"
-	n_simulations = 5
+	n_simulations = 10
 	for (sim_id in 1:n_simulations) {
 		sig_activities = list()
 
-		meaningful_sig_list = c("SBS2+13", "SBS3", "SBS4", "SBS6", "SBS7", "SBS9")
 		list[meaningful_sig1, meaningful_sig2] = sample(meaningful_sig_list, size = 2)
 
 		# Signatures change in cluster 2, but not in cluster 1
-		sig_activities[[1]] <- sample_sigs_and_activities(meaningful_sig1, meaningful_sig2, sig1_range=c(0.4, 0.8))
+		sig_activities[[1]] <- sample_sigs_and_activities(meaningful_sig1, meaningful_sig2, sig1_range=c(0.4, 0.7))
 
 		print("Sig activities")
 		print(do.call(rbind,sig_activities))
@@ -456,15 +469,14 @@ create_simulation_set <- function(outdir = "simulations", mut_per_sim = 5000,
 
     print("Simulation type 0b: two clusters")
 	# signatures change in one cluster but not in the other"
-	n_simulations = 5
+	n_simulations = 10
 	for (sim_id in 1:n_simulations) {
 		sig_activities = list()
 
-		meaningful_sig_list = c("SBS2+13", "SBS3", "SBS4", "SBS6", "SBS9", "SBS7")
 		list[meaningful_sig1, meaningful_sig2] = sample(meaningful_sig_list, size = 2)
 
 		# Signatures change in cluster 2, but not in cluster 1
-		clonal_sigs <- sample_sigs_and_activities(meaningful_sig1, meaningful_sig2, sig1_range=c(0.4, 0.8))
+		clonal_sigs <- sample_sigs_and_activities(meaningful_sig1, meaningful_sig2, sig1_range=c(0.4, 0.7))
 
 		sig_activities[[1]] <- clonal_sigs
 		sig_activities[[2]] <- sample_sigs_and_activities(meaningful_sig1, meaningful_sig2, sig1_range=c(0.2, 0.4))
@@ -506,17 +518,17 @@ create_simulation_set <- function(outdir = "simulations", mut_per_sim = 5000,
 		}
 	}
 
-    print("Simulation type 1: branching")
+
+  print("Simulation type 1: branching")
 	# signatures change in one cluster but not in the other"
-	n_simulations = 1
+	n_simulations = 100
 	for (sim_id in 1:n_simulations) {
 		sig_activities = list()
 
-		meaningful_sig_list = c("SBS2+13", "SBS3", "SBS4", "SBS6", "SBS7", "SBS9")
 		list[meaningful_sig1, meaningful_sig2] = sample(meaningful_sig_list, size = 2)
 
 		# Signatures change in cluster 2, but not in cluster 1
-		clonal_sigs <- sample_sigs_and_activities(meaningful_sig1, meaningful_sig2, sig1_range=c(0.4, 0.8))
+		clonal_sigs <- sample_sigs_and_activities(meaningful_sig1, meaningful_sig2, sig1_range=c(0.4, 0.7))
 
 		sig_activities[[1]] <- clonal_sigs
 		sig_activities[[2]] <- clonal_sigs
@@ -568,11 +580,10 @@ create_simulation_set <- function(outdir = "simulations", mut_per_sim = 5000,
 	# Signatures change in both cluster 1 and cluster 2
 
 	print("Simulation 2a: 10% mutations are affected, CNA+1")
-	n_simulations = 1
+	n_simulations = 100
 	for (sim_id in 1:n_simulations) {
 		sig_activities = list()
 
-		meaningful_sig_list = c("SBS2+13", "SBS3", "SBS4", "SBS6", "SBS7", "SBS9")
 		list[meaningful_sig1, meaningful_sig2] = sample(meaningful_sig_list, size = 2)
 
 		for (i in 1:3) {
@@ -631,7 +642,6 @@ create_simulation_set <- function(outdir = "simulations", mut_per_sim = 5000,
 	# for (sim_id in 1:n_simulations) {
 	# 	sig_activities = list()
 
-	# 	meaningful_sig_list = c("SBS2+13", "SBS3", "SBS4", "SBS6", "SBS7", "SBS9")
 	# 	list[meaningful_sig1, meaningful_sig2] = sample(meaningful_sig_list, size = 2)
 
 	# 	for (i in 1:3) {
@@ -687,11 +697,10 @@ create_simulation_set <- function(outdir = "simulations", mut_per_sim = 5000,
 
 
 	print("Simulation 3a: Violation of infinite site assumption with CCF1+CCF2")
-	n_simulations = 1
+	n_simulations = 100
 	for (sim_id in 1:n_simulations) {
 		sig_activities = list()
 
-		meaningful_sig_list = c("SBS2+13", "SBS3", "SBS4", "SBS6", "SBS7", "SBS9")
 		list[meaningful_sig1, meaningful_sig2] = sample(meaningful_sig_list, size = 2)
 
 		# Signatures change in cluster 2, but not in cluster 1
@@ -755,7 +764,6 @@ create_simulation_set <- function(outdir = "simulations", mut_per_sim = 5000,
 	# for (sim_id in 1:n_simulations) {
 	# 	sig_activities = list()
 
-	# 	meaningful_sig_list = c("SBS2+13", "SBS3", "SBS4", "SBS6", "SBS7", "SBS9")
 	# 	list[meaningful_sig1, meaningful_sig2] = sample(meaningful_sig_list, size = 2)
 
 	# 	for (i in 1:3) {
