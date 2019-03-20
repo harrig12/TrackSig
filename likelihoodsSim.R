@@ -21,8 +21,6 @@ signature_file <- "annotation/sigProfiler_SBS_signatures.txt"
 
 mut_per_sim <- 5000
 
-tracksig_results_dir = "TS_scoringSim_orig/"
-
 
 # Create simulation vcfs
 print(sprintf("Generating simulations ..."))
@@ -48,47 +46,69 @@ TrackSig.options(purity_file = sim_purity_file,
                  sig_amount = "onlyKnownSignatures",
                  compute_bootstrap = FALSE,
                  cancer_type_signatures = FALSE,
-                 pcawg_format = TRUE,
-                 DIR_RESULTS = tracksig_results_dir,
-                 bin_size = 100,
-                 pelt_penalty = expression( 2* log(n_bins)),
-                 pelt_score_fxn = TrackSig:::gaussian_ll)
+                 pcawg_format = TRUE)
+
 
 
 # tracksig - make counts
 for (sim_i in 1:length(simulations)){
   print(sprintf("%s", simulations[sim_i]))
   run_simulation(simulations[sim_i])
-
 }
 
-# show results for 3 liklihood functions; sig only, vaf only, sig+vaf
+# show results for 3 likelihood functions; sig only, ccf only, sig+ccf
+
+# options for 3 functions
+DIR_RESULTS_list <- c("TS_sigLikelihood_results", "TS_ccfLikelihood_results",
+                      "TS_sigccfLikelihood_results")
+
+pelt_penalty_list <- c(expression((n_sigs - 1) * log(n_bins)), expression( 2 * log(n_bins)),
+                      expression((n_sigs - 1) * log(n_bins) + 2 * log(n_bins)))
+
+pelt_score_fxn_list <- c(TrackSig:::log_likelihood_mixture_multinomials, TrackSig:::gaussian_ll,
+                         TrackSig:::sum_gaussian_mixture_multinomials_ll)
 
 
-# tracksig - compute mutational signatures
-compute_signatures_for_all_examples(countsDir = "data/counts", bootstrapDir = "data/bootstrap/")
+for (likelihood_i in 1:3){
 
-# tracksig - get exposures
-extract_exposures_per_mutation(activities_dir = paste0(tracksig_results_dir, "/SIMULATED/"),
-                               sorted_mutations_dir = "data/mut_types/")
+  #set options for this scoring
+  TrackSig.options(DIR_RESULTS = paste0(DIR_RESULTS_list[likelihood_i], "/"),
+                   pelt_penalty = pelt_penalty_list[likelihood_i],
+                   pelt_score_fxn = pelt_score_fxn_list[[likelihood_i]])
 
-# tracksig - bootstrap not functional yet
-#compute_errorbars_for_all_examples()
 
-res <- TrackSig:::compare_simulation_results(simulations,
-                                             ground_truth_dir = outdir,
-                                             method_results_dir = paste0(tracksig_results_dir, "/SIMULATED/"),
-                                             res_file_name = "TS_KL_both_scoring_res.txt")
+  # tracksig - compute mutational signatures with settings
+  compute_signatures_for_all_examples(countsDir = "data/counts", bootstrapDir = "data/bootstrap/")
 
-pdf("TrackSig_KL_both_scoring.pdf", width = 5, height=5)
+  # tracksig - get exposures
+  extract_exposures_per_mutation(activities_dir = paste0(DIR_RESULTS_list[likelihood_i], "/SIMULATED/"),
+                                 sorted_mutations_dir = "data/mut_types/")
 
-# ploting
+  txtFile <- sprintf("KL_%s.txt", DIR_RESULTS_list[likelihood_i])
+  pdfFile <- sprintf("KL_%s.pdf", DIR_RESULTS_list[likelihood_i])
 
-plot(res$kl, res$abs_diff_max, main="TrackSig KL both scoring",
+  # compare KL and changepoints found to simulated truth
+  res <- TrackSig:::compare_simulation_results(simulations,
+                                               ground_truth_dir = outdir,
+                                               method_results_dir = paste0(DIR_RESULTS_list[likelihood_i], "/SIMULATED/"),
+                                               res_file_name = txtFile)
+
+  pdf(pdfFile, width = 5, height=5)
+
+  # ploting
+
+  plot(res$kl, res$abs_diff_max, main="TrackSig KL both scoring",
+       xlab="KL", ylab="max abs diff", pch = 20, col = 1:3)
+
+  dev.off()
+}
+
+
+res <- read.table("KL_TS_sigLikelihood_results.txt", header = T)
+
+plot(res$kl, res$abs_diff_max, main="TrackSig KL",
      xlab="KL", ylab="max abs diff", pch = 20)
 
-
-
-dev.off()
+text(res$kl, res$abs_diff_max, res$sim)
 
 # [END]

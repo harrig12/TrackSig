@@ -1,4 +1,4 @@
-source("sim_pipeline_helpers.R")
+library(TrackSig)
 
 list <- structure(NA,class="result")
 "[<-.result" <- function(x,...,value) {
@@ -20,28 +20,28 @@ simulations <- list.files(outdir)
 sel <- grep(x = simulations, "^Simulation")
 simulations <- simulations[sel]
 
-tracksig_dir = "TS_results_signature_trajectories/"
+tracksig_dir = "TS_ccfLikelihood_results/"
 
-list[res, gt_exp_l, estim_exp_l] <- compare_simulation_results(
-    simulations, ground_truth_dir = outdir, 
+list[res, gt_exp_l, estim_exp_l] <- TrackSig:::compare_simulation_results(
+    simulations, ground_truth_dir = outdir,
     method_results_dir = paste0(tracksig_dir, "/SIMULATED/"),
     res_file_name = "TrackSig_simulation_results.txt")
 
 res_TrackSig <- res
-plot_kl_results(res, "TrackSig")
+TrackSig:::plot_kl_results(res, "TrackSig")
 
 print("Percentage of samples with KL larger than 0.05")
 mean(res$kl > 0.1)
 
 print("Average KL per type: TrackSig")
-avg_kl_per_type_TrackSig <- get_results_per_sim_type(res, "TrackSig")
+avg_kl_per_type_TrackSig <- TrackSig:::get_results_per_sim_type(res, "TrackSig")
 print(avg_kl_per_type_TrackSig)
 
 # ===========================================
 # Investigate samples with large KL
 
 simulations_large_kl <- res[res$kl > 0.05,"sim"]
-sigs_in_bad_sims <- get_sig_names_from_list(gt_exp_l[simulations_large_kl])
+sigs_in_bad_sims <- TrackSig:::get_sig_names_from_list(gt_exp_l[simulations_large_kl])
 table(unlist(sigs_in_bad_sims))
 # Signature 7 is present in ALL the simulations where TrackSig results differ from ground truth
 
@@ -56,13 +56,13 @@ table(unlist(sigs_in_bad_sims))
 # has_sig7[has_sig7 == 1] <- "magenta"
 
 pdf("TrackSig_simulation_results_KL_vs_mean.pdf", width = 5, height=5)
-plot(res_TrackSig$kl, res_TrackSig$abs_diff_mean, main="TrackSig versus Truth", 
+plot(res_TrackSig$kl, res_TrackSig$abs_diff_mean, main="TrackSig versus Truth",
    xlab="KL", ylab="mean abs diff",  xlim=c(0, 1), ylim=c(0, 1)) #col=has_sig7)
 #legend('topleft', legend = c("No SBS7", "Has SBS7"), col = c("darkgreen", "magenta"), cex = 0.8, pch = 1)
 dev.off()
 
 pdf("TrackSig_simulation_results_KL_vs_max.pdf", width = 5, height=5)
-plot(res_TrackSig$kl, res_TrackSig$abs_diff_max, main="TrackSig versus Truth", 
+plot(res_TrackSig$kl, res_TrackSig$abs_diff_max, main="TrackSig versus Truth",
    xlab="KL", ylab="max abs diff", xlim=c(0, 1), ylim=c(0, 1)) # col=has_sig7)
 #legend('topleft', legend = c("No SBS7", "Has SBS7"), col = c("darkgreen", "magenta"), cex = 0.8, pch = 1)
 dev.off()
@@ -77,20 +77,20 @@ sel <- grep(x = simulations, "^Simulation")
 simulations <- simulations[sel]
 
 sciclone_dir <- "SCDS_results/"
-list[res, gt_exp_l, estim_exp_l] <- compare_simulation_results(simulations, 
-    ground_truth_dir = outdir, 
+list[res, gt_exp_l, estim_exp_l] <- TrackSig:::compare_simulation_results(simulations,
+    ground_truth_dir = outdir,
     method_results_dir = paste0(sciclone_dir, "/SIMULATED/"),
     res_file_name = "sciclone_simulation_results.txt")
 
 res_SciClone <- res
 estim_exp_l_sciclone <- estim_exp_l
-plot_kl_results(res, "SciClone")
+TrackSig:::plot_kl_results(res, "SciClone")
 
 print("sciclone: Percentage of samples with KL larger than 0.05")
 mean(res$kl > 0.05)
 
 print("Average KL per type: SciClone")
-avg_kl_per_type_SciClone <- get_results_per_sim_type(res_SciClone, "SciClone")
+avg_kl_per_type_SciClone <- TrackSig:::get_results_per_sim_type(res_SciClone, "SciClone")
 print(avg_kl_per_type_SciClone)
 
 
@@ -109,13 +109,13 @@ print(avg_kl_per_type_SciClone)
 # has_sig7[has_sig7 == 1] <- "magenta"
 
 pdf("SciClone_simulation_results_KL_vs_mean.pdf", width = 5, height=5)
-plot(res_SciClone$kl, res_SciClone$abs_diff_mean, main="SciClone versus Truth", 
+plot(res_SciClone$kl, res_SciClone$abs_diff_mean, main="SciClone versus Truth",
    xlab="KL", ylab="mean abs diff", xlim=c(0, 1), ylim=c(0, 1)) #col=has_sig7)
 #legend('topleft', legend = c("No SBS7", "Has SBS7"), col = c("darkgreen", "magenta"), cex = 0.8, pch = 1)
 dev.off()
 
 pdf("SciClone_simulation_results_KL_vs_max.pdf", width = 5, height=5)
-plot(res_SciClone$kl, res_SciClone$abs_diff_max, main="SciClone versus Truth", 
+plot(res_SciClone$kl, res_SciClone$abs_diff_max, main="SciClone versus Truth",
    xlab="KL", ylab="max abs diff", xlim=c(0, 1), ylim=c(0, 1)) #col=has_sig7)
 #legend('topleft', legend = c("No SBS7", "Has SBS7"), col = c("darkgreen", "magenta"), cex = 0.8, pch = 1)
 dev.off()
@@ -160,16 +160,16 @@ correct_tracksig[correct_tracksig == 0] <- "red"
 correct_tracksig[correct_tracksig == 1] <- "darkgreen"
 
 pdf("sciclone_results_coloured_TrackSig_mean_diff.pdf", width = 5, height=5)
-plot(res_SciClone[sim_order,]$kl, res_SciClone[sim_order,]$abs_diff_mean, 
-  main="Sciclone versus Truth", 
+plot(res_SciClone[sim_order,]$kl, res_SciClone[sim_order,]$abs_diff_mean,
+  main="Sciclone versus Truth",
    xlab="KL", ylab="mean abs diff", col=correct_tracksig,
    xlim=c(0, 1), ylim=c(0, 1))
 legend('topleft', legend = c("TrackSig: KL > 0.05", "TrackSig: KL < 0.05"), col = c("red", "darkgreen"), cex = 0.8, pch = 1)
 dev.off()
 
 pdf("sciclone_results_coloured_TrackSig_max_diff.pdf", width = 5, height=5)
-plot(res_SciClone[sim_order,]$kl, res_SciClone[sim_order,]$abs_diff_max, 
-  main="Sciclone versus Truth", 
+plot(res_SciClone[sim_order,]$kl, res_SciClone[sim_order,]$abs_diff_max,
+  main="Sciclone versus Truth",
    xlab="KL", ylab="max abs diff", col=correct_tracksig,
    xlim=c(0, 1), ylim=c(0, 1))
 legend('topleft', legend = c("TrackSig: KL > 0.05", "TrackSig: KL < 0.05"), col = c("red", "darkgreen"), cex = 0.8, pch = 1)
@@ -180,14 +180,14 @@ dev.off()
 # Comparison of the KL between TrackSig and SciClone
 sim_order <- intersect(res_SciClone[,1], res_TrackSig[,1])
 pdf(paste0("TrackSig_vs_SciCLone_simulation_results_KL.pdf"), width = 5, height=5)
-plot(res_SciClone[sim_order,]$kl, res_TrackSig[sim_order,]$kl, 
+plot(res_SciClone[sim_order,]$kl, res_TrackSig[sim_order,]$kl,
    xlab="SciClone KL", ylab="TrackSig KL", xlim=c(0, 0.5), ylim=c(0, 0.5))
 dev.off()
 
 # for depth 30
 sim_order <- intersect(res_SciClone[res_SciClone$depth == 30,1], res_TrackSig[res_TrackSig$depth == 30,1])
 pdf(paste0("TrackSig_vs_SciCLone_simulation_results_KL_depth_30.pdf"), width = 5, height=5)
-plot(res_SciClone[sim_order,]$kl, res_TrackSig[sim_order,]$kl, 
+plot(res_SciClone[sim_order,]$kl, res_TrackSig[sim_order,]$kl,
    xlab="SciClone KL", ylab="TrackSig KL", xlim=c(0, 0.5), ylim=c(0, 0.5))
 dev.off()
 
@@ -197,12 +197,12 @@ dev.off()
 # simulations_depth100 <- simulations[grepl("depth100$", simulations)]
 # simulations_depth1000 <- simulations[grepl("depth1000$", simulations)]
 # Compare change-points
-cp_comparison <- compare_changepoints(simulations, 
+cp_comparison <- compare_changepoints(simulations,
   ground_truth_dir = outdir,
-  tracksig_results_dir = paste0(tracksig_dir, "/SIMULATED/"), 
-  sciclone_results_dir = paste0(sciclone_dir, "/SIMULATED/"), 
+  tracksig_results_dir = paste0(tracksig_dir, "/SIMULATED/"),
+  sciclone_results_dir = paste0(sciclone_dir, "/SIMULATED/"),
   res_file_name = "cp_comparison.txt",
-  change_at_cp_threshold = 0.05) 
+  change_at_cp_threshold = 0.05)
 
 # choose depth 30 only
 # idx <-  grepl(paste0("depth30$"), sapply(cp_comparison[,1],toString))
@@ -243,8 +243,8 @@ print(mean(abs(cp_comparison$n_gt_created_cp - cp_comparison$cp_SCDS_results)))
 
 
 print("Comparison of number of CP per sim type")
-sim_types <- c("one_cluster", "two_clusters", 
-    "branching", "cna_plus", 
+sim_types <- c("one_cluster", "two_clusters",
+    "branching", "cna_plus",
     "inf_site_viol_plus")
 
 depth_types <- c("depth10", "depth30", "depth100")
@@ -257,13 +257,13 @@ TrackSig_cp_summary <- SciClone_cp_summary <- res_table
 # Compute the same things for over-estimating and under-estimating number of subclones
 for (sim_type in sim_types) {
   for (d_type in depth_types) {
-    idx <- grepl(sim_type, sapply(cp_comparison[,1],toString)) 
+    idx <- grepl(sim_type, sapply(cp_comparison[,1],toString))
     idx <- idx &  grepl(paste0(d_type,"$"), sapply(cp_comparison[,1],toString))
 
     # print(sim_type)
     # print(d_type)
     # print(sum(idx))
-   
+
     # print(sim_type)
     # print(d_type)
     # print(mean(cp_comparison[idx,]$cp_tracksig ))
@@ -275,7 +275,7 @@ for (sim_type in sim_types) {
     # print(mean(cp_comparison[idx,]$n_gt_created_cp == cp_comparison[idx,]$cp_tracksig))
     # print("SciClone agrees with GT")
     # print(mean(cp_comparison[idx,]$n_gt_created_cp == cp_comparison[idx,]$cp_sciclone))
-    
+
     TrackSig_cp_summary[d_type, sim_type] <- mean((cp_comparison[idx,]$n_gt_created_cp == cp_comparison[idx,]$cp_tracksig_adjusted) )
     SciClone_cp_summary[d_type, sim_type] <- mean((cp_comparison[idx,]$n_gt_created_cp == cp_comparison[idx,]$cp_SCDS_results) )
   }
@@ -286,7 +286,7 @@ print(SciClone_cp_summary)
 
 sim_type <- "two_clusters"
 d_type <- "depth100"
-idx <- grepl(sim_type, sapply(cp_comparison[,1],toString)) 
+idx <- grepl(sim_type, sapply(cp_comparison[,1],toString))
 idx <- idx &  grepl(paste0(d_type,"$"), sapply(cp_comparison[,1],toString))
 
 
@@ -304,16 +304,16 @@ cp_comparison[idx,][cp_comparison[idx,]$cp_SCDS_results > 1,]
 # For this, run sciclone with three different cluster methods: clusterMethod = "bmm", "gaussian.bmm", "binomial.bmm"
 # Finally, rename the folders to SCDS_results_binomial_bmm, SCDS_results_bmm or SCDS_results_gaussian_bmm
 
-cp_comparison <- compare_changepoints(simulations, 
+cp_comparison <- compare_changepoints(simulations,
   ground_truth_dir = outdir,
-  tracksig_results_dir = paste0(tracksig_dir, "/SIMULATED/"), 
-  sciclone_results_dir = paste0(c("SCDS_results_binomial", "SCDS_results_bmm") , "/SIMULATED/"), 
+  tracksig_results_dir = paste0(tracksig_dir, "/SIMULATED/"),
+  sciclone_results_dir = paste0(c("SCDS_results_binomial", "SCDS_results_bmm") , "/SIMULATED/"),
   res_file_name = "cp_comparison.txt",
-  change_at_cp_threshold = 0.05) 
+  change_at_cp_threshold = 0.05)
 
 depth_types <- c("depth10", "depth30", "depth100")
-sim_types <- c("one_cluster", "two_clusters", 
-    "branching", "cna_plus", 
+sim_types <- c("one_cluster", "two_clusters",
+    "branching", "cna_plus",
     "inf_site_viol_plus")
 method_names <- c("cp_tracksig_adjusted", "cp_SCDS_results_binomial", "cp_SCDS_results_bmm")
 
@@ -330,11 +330,11 @@ rownames(empty_table) <- method_names
 res <- list()
 
 # Compute the same things for over-estimating and under-estimating number of subclones
-for (d_type in depth_types) { 
+for (d_type in depth_types) {
   res[[d_type]] <- empty_table
 
   for (sim_type in sim_types) {
-    idx <- grepl(sim_type, sapply(cp_comparison[,1],toString)) 
+    idx <- grepl(sim_type, sapply(cp_comparison[,1],toString))
     idx <- idx &  grepl(paste0(d_type,"$"), sapply(cp_comparison[,1],toString))
 
     for (name in method_names) {
@@ -351,7 +351,7 @@ print(res)
 
 COLORS <- c("#F3766E", "#1FBFC3", "#C280F5")  #"#7CAA1F")
 
-for (d_type in depth_types) { 
+for (d_type in depth_types) {
   pdf(paste0("cp_comparison_barplot_", d_type, ".pdf"), width = 7, height=5)
   par(mar=c(6.1, 4.1, 6.1, 2.1))
   barplot(as.matrix(res[[d_type]]), beside=T,
@@ -386,8 +386,8 @@ for (bin_size in bin_sizes){
   simulations_w_bin_size = simulations[sim_bin_size_idx]
 
   list[res, gt_exp_l, estim_exp_l] <- compare_simulation_results(
-      simulations_w_bin_size, 
-      ground_truth_dir = outdir, 
+      simulations_w_bin_size,
+      ground_truth_dir = outdir,
       method_results_dir = paste0(tracksig_dir, "/SIMULATED/"),
       res_file_name = sprintf("TrackSig_simulation_results_post%d.txt", bin_size))
 
@@ -426,13 +426,13 @@ print(bin_size_results_max_diff)
 
 
 pdf("TrackSig_bin_size_vs_KL.pdf", width = 5, height=5)
-plot(bin_size_results_kl$bin_size, bin_size_results_kl$metric, 
+plot(bin_size_results_kl$bin_size, bin_size_results_kl$metric,
   main="", xlab="bin size", ylab="KL", pch=19)
 dev.off()
 
 
 pdf("TrackSig_bin_size_vs_mean_diff.pdf", width = 5, height=5)
-plot(bin_size_results_mean_diff$bin_size, bin_size_results_mean_diff$metric, 
+plot(bin_size_results_mean_diff$bin_size, bin_size_results_mean_diff$metric,
   main="", xlab="bin size", ylab="mean activity diff", pch=19)
 dev.off()
 
