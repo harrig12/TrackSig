@@ -84,31 +84,11 @@ for (likelihood_i in 1:3){
   extract_exposures_per_mutation(activities_dir = paste0(DIR_RESULTS_list[likelihood_i], "/SIMULATED/"),
                                  sorted_mutations_dir = "data/mut_types/")
 
-  txtFile <- sprintf("KL_%s.txt", DIR_RESULTS_list[likelihood_i])
-  pdfFile <- sprintf("KL_%s.pdf", DIR_RESULTS_list[likelihood_i])
+  # create plots and compare simulation with ground truth
+  capture.output(TrackSig:::compare_simulations(DIR_RESULTS_list[i], outdir = DIR_RESULTS_list[i]),
+                 file = sprintf("compare_simulations_%s", DIR_RESULTS_list[i]))
 
-  # compare KL and changepoints found to simulated truth
-  res <- TrackSig:::compare_simulation_results(simulations,
-                                               ground_truth_dir = outdir,
-                                               method_results_dir = paste0(DIR_RESULTS_list[likelihood_i], "/SIMULATED/"),
-                                               res_file_name = txtFile)
 
-  pdf(pdfFile, width = 5, height=5)
-
-  # ploting
-
-  plot(res$kl, res$abs_diff_max, main="TrackSig KL both scoring",
-       xlab="KL", ylab="max abs diff", pch = 20, col = 1:3)
-
-  dev.off()
 }
-
-
-res <- read.table("KL_TS_sigLikelihood_results.txt", header = T)
-
-plot(res$kl, res$abs_diff_max, main="TrackSig KL",
-     xlab="KL", ylab="max abs diff", pch = 20)
-
-text(res$kl, res$abs_diff_max, res$sim)
 
 # [END]
