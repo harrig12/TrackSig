@@ -34,7 +34,7 @@ compare_simulation_results  <- function(simulation_list,
     gt_exposures <- read.delim(gt_exposures_file, header=T, stringsAsFactors=F)
     gt_pos = paste0(gt_exposures[,"chromosome"], "_", gt_exposures[,"start"])
     rownames(gt_exposures) <- gt_pos
-    
+
     estim_exposures_file = paste0(method_results_dir, "/", sim, "/", "sig_exposures_per_mut.txt")
 
     if (!file.exists(estim_exposures_file)) {
@@ -70,6 +70,7 @@ compare_simulation_results  <- function(simulation_list,
     
     d <- data.frame(sim = sim, 
       abs_diff_mean = mean(unlist(abs_diff), na.rm=TRUE),
+      abs_diff_median = median(unlist(abs_diff), na.rm=TRUE),
       abs_diff_max = max(unlist(abs_diff), na.rm=TRUE),
       kl = mean(kldiv_multinomials(gt_exposures_d, estim_exposures_d_eps), na.rm=TRUE),
       sim_type = sim_type,

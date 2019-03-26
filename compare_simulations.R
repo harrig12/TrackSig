@@ -192,6 +192,24 @@ plot(res_SciClone[sim_order,]$kl, res_TrackSig[sim_order,]$kl,
 dev.off()
 
 
+sim_order <- intersect(res_SciClone[,1], res_TrackSig[,1])
+pdf(paste0("TrackSig_vs_SciCLone_simulation_results_max_diff.pdf"), width = 5, height=5)
+plot(res_SciClone[sim_order,]$abs_diff_max, res_TrackSig[sim_order,]$abs_diff_max, 
+   xlab="SciClone max exp diff", ylab="TrackSig max exp diff", xlim=c(0, 0.5), ylim=c(0, 0.5))
+dev.off()
+
+sim_order <- intersect(res_SciClone[,1], res_TrackSig[,1])
+pdf(paste0("TrackSig_vs_SciCLone_simulation_results_mean_diff.pdf"), width = 5, height=5)
+plot(res_SciClone[sim_order,]$abs_diff_mean, res_TrackSig[sim_order,]$abs_diff_mean, 
+   xlab="SciClone mean exp diff", ylab="TrackSig mean exp diff", xlim=c(0, 0.5), ylim=c(0, 0.5))
+dev.off()
+
+sim_order <- intersect(res_SciClone[,1], res_TrackSig[,1])
+pdf(paste0("TrackSig_vs_SciCLone_simulation_results_median_diff.pdf"), width = 5, height=5)
+plot(res_SciClone[sim_order,]$abs_diff_median, res_TrackSig[sim_order,]$abs_diff_median, 
+   xlab="SciClone median exp diff", ylab="TrackSig median exp diff", xlim=c(0, 0.5), ylim=c(0, 0.5))
+dev.off()
+
 # ===========================================
 # Compare number of change-points
 # simulations_depth100 <- simulations[grepl("depth100$", simulations)]
@@ -354,11 +372,12 @@ COLORS <- c("#F3766E", "#1FBFC3", "#C280F5")  #"#7CAA1F")
 for (d_type in depth_types) { 
   pdf(paste0("cp_comparison_barplot_", d_type, ".pdf"), width = 7, height=5)
   par(mar=c(6.1, 4.1, 6.1, 2.1))
+  bar_names <- gsub(" plus", "", gsub("_", " ", colnames(res[[d_type]])))
   barplot(as.matrix(res[[d_type]]), beside=T,
                  col=COLORS[1:nrow(res[[d_type]])],
-                 names.arg= gsub("_", " ", colnames(res[[d_type]])) ) #las=2)
+                 names.arg= bar_names) #las=2)
   legend("topright", inset=c(0,-0.5), xpd=TRUE,  bty="n",
-       legend = c("TrackSig", "SciClone binomial.bmm", "SciClone bmm (default)"),
+       legend = c("TrackSig", "SciClone binomial.bmm (oracle)", "SciClone bmm (default)"),
        fill = COLORS[(1:nrow(res[[d_type]]))] )
   dev.off()
 }
