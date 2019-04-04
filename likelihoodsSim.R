@@ -59,8 +59,7 @@ for (sim_i in 1:length(simulations)){
 # show results for 3 likelihood functions; sig only, ccf only, sig+ccf
 
 # options for 3 functions
-DIR_RESULTS_list <- c("TS_sigLikelihood_results", "TS_ccfLikelihood_results",
-                      "TS_sigccfLikelihood_results")
+DIR_RESULTS_list <- c("sig", "ccf", "sigccf")
 
 pelt_penalty_list <- c(expression((n_sigs - 1) * log(n_bins)), expression( 2 * log(n_bins)),
                       expression((n_sigs - 1) * log(n_bins) + 2 * log(n_bins)))
@@ -78,17 +77,18 @@ for (likelihood_i in 1:3){
 
 
   # tracksig - compute mutational signatures with settings
-  compute_signatures_for_all_examples(countsDir = "data/counts", bootstrapDir = "data/bootstrap/")
+  #compute_signatures_for_all_examples(countsDir = "data/counts", bootstrapDir = "data/bootstrap/")
 
   # tracksig - get exposures
   extract_exposures_per_mutation(activities_dir = paste0(DIR_RESULTS_list[likelihood_i], "/SIMULATED/"),
                                  sorted_mutations_dir = "data/mut_types/")
 
   # create plots and compare simulation with ground truth
-  capture.output(TrackSig:::compare_simulations(DIR_RESULTS_list[i], outdir = DIR_RESULTS_list[i]),
-                 file = sprintf("compare_simulations_%s", DIR_RESULTS_list[i]))
-
-
+  capture.output(TrackSig:::compare_simulations(DIR_RESULTS_list[likelihood_i],
+                                                dataDir = "data",
+                                                outDir = DIR_RESULTS_list[likelihood_i]),
+                 file = sprintf("%s/compare_summary_%s.txt",
+                                DIR_RESULTS_list[likelihood_i],DIR_RESULTS_list[likelihood_i]))
 }
 
 # [END]
