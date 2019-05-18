@@ -1,4 +1,0 @@
-samplename	purity
-sim5000	1.0
-sim940	1.0
-sim9500	1.0

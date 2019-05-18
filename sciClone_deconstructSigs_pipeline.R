@@ -8,9 +8,7 @@ library(sciClone)
 library(tidyr)
 library(deconstructSigs)
 library(TrackSig)
-
-#setwd("~/Desktop/TrackSig_simulations/")
-getwd()
+#libarary(tictoc)
 
 # get simulation names
 simNames <- list.files("data")
@@ -28,11 +26,10 @@ simNames <- sample(simNames, length(simNames))
 # binSize parameter
 binSize <- 100
 
-times <- c()
 # to be parallelized
 for (simName in simNames){ #for each simulation
 
-  print(sprintf("Processing %s: %s/%s", 
+  print(sprintf("Processing %s: %s/%s",
     simName, which(simNames == simName), length(simNames)))
 
   #tic()
@@ -64,7 +61,7 @@ for (simName in simNames){ #for each simulation
   cnaTable <- read.table(sprintf("data/%s/%s_cna.txt", simName, simName), header = T)
 
   # sciclone - compute clusters
-  # If using non-zero minimumDepth, sC@clust$cluster.assignments is filtered by depth, 
+  # If using non-zero minimumDepth, sC@clust$cluster.assignments is filtered by depth,
   # so it has less elements than  vafTable$cluster
   # I don't know what to do with this -- I didn't find the list of remaining mutations in sC object
   skip_sim = FALSE
@@ -78,20 +75,20 @@ for (simName in simNames){ #for each simulation
       print(err)
       skip_sim = TRUE
     }, finally = {
-   }) 
+   })
 
   if (skip_sim) {
     next
   }
 
- 
+
  if (length(sC@clust$cluster.assignments) == nrow(vafTable)) {
     # get cluster assignments
     vafTable$cluster <- sC@clust$cluster.assignments
   } else {
      # Remove mutations with depth 0
     vafTable <- vafTable[vafTable[,3] + vafTable[,4] >= 1,]
-    
+
     # get cluster assignments
     vafTable$cluster <- sC@clust$cluster.assignments
   }
@@ -191,12 +188,13 @@ for (simName in simNames){ #for each simulation
 
   # plot
   plotName <- sprintf("%s/%s_%s", resultsDir, simName, "trajectory.pdf")
-  
+
   if (ncol(mixtures) > 1) {
     TrackSig:::plot_signatures(mixtures*100, plot_name = plotName, phis = phis * 2, mark_change_points = F,
                     change_points = NULL, transition_points = NULL, scale=1.2, save = T)
   }
 
+  # times log can be saved to file, see ?tic.log()
   #toc(log=T)
   #beep(2)
 }
