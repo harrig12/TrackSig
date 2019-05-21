@@ -28,7 +28,14 @@ list[res, gt_exp_l, estim_exp_l] <- compare_simulation_results(
     res_file_name = "TrackSig_simulation_results.txt")
 
 res_TrackSig <- res
+save(res_TrackSig, file="res_TrackSig.RData")
 plot_kl_results(res, "TrackSig")
+
+print("Mean median activity diff -- TrackSig")
+mean(res_TrackSig$abs_diff_median)
+
+print("Mean median activity diff exceeeds 5%-- TrackSig")
+mean(res_TrackSig$abs_diff_median > 0.05)
 
 print("Percentage of samples with KL larger than 0.05")
 mean(res$kl > 0.1)
@@ -83,7 +90,15 @@ list[res, gt_exp_l, estim_exp_l] <- compare_simulation_results(simulations,
     res_file_name = "sciclone_simulation_results.txt")
 
 res_SciClone <- res
+save(res_SciClone, file="res_SciClone.RData")
 estim_exp_l_sciclone <- estim_exp_l
+
+print("Mean median activity diff -- SciClone")
+mean(res_SciClone$abs_diff_median)
+
+print("Mean median activity diff exceeeds 5%-- SciClone")
+mean(res_SciClone$abs_diff_median > 0.05)
+
 plot_kl_results(res, "SciClone")
 
 print("sciclone: Percentage of samples with KL larger than 0.05")
@@ -181,15 +196,57 @@ dev.off()
 sim_order <- intersect(res_SciClone[,1], res_TrackSig[,1])
 pdf(paste0("TrackSig_vs_SciCLone_simulation_results_KL.pdf"), width = 5, height=5)
 plot(res_SciClone[sim_order,]$kl, res_TrackSig[sim_order,]$kl, 
-   xlab="SciClone KL", ylab="TrackSig KL", xlim=c(0, 0.5), ylim=c(0, 0.5))
+   xlab="SciClone KL div: predicted vs true activities", 
+   ylab="TrackSig KL div: predicted vs true activities", 
+   xlim=c(0, 0.25), ylim=c(0, 0.25))
 dev.off()
 
 # for depth 30
 sim_order <- intersect(res_SciClone[res_SciClone$depth == 30,1], res_TrackSig[res_TrackSig$depth == 30,1])
 pdf(paste0("TrackSig_vs_SciCLone_simulation_results_KL_depth_30.pdf"), width = 5, height=5)
 plot(res_SciClone[sim_order,]$kl, res_TrackSig[sim_order,]$kl, 
-   xlab="SciClone KL", ylab="TrackSig KL", xlim=c(0, 0.5), ylim=c(0, 0.5))
+  xlab="SciClone KL div: predicted vs true activities", 
+   ylab="TrackSig KL div: predicted vs true activities", 
+   xlim=c(0, 0.25), ylim=c(0, 0.25))
 dev.off()
+
+
+sim_order <- intersect(res_SciClone[,1], res_TrackSig[,1])
+pdf(paste0("TrackSig_vs_SciCLone_simulation_results_max_diff.pdf"), width = 5, height=5)
+plot(res_SciClone[sim_order,]$abs_diff_max, res_TrackSig[sim_order,]$abs_diff_max, 
+   xlab="SciClone max exp diff", ylab="TrackSig max exp diff", xlim=c(0, 0.5), ylim=c(0, 0.5))
+dev.off()
+
+sim_order <- intersect(res_SciClone[,1], res_TrackSig[,1])
+pdf(paste0("TrackSig_vs_SciCLone_simulation_results_mean_diff.pdf"), width = 5, height=5)
+plot(res_SciClone[sim_order,]$abs_diff_mean, res_TrackSig[sim_order,]$abs_diff_mean, 
+   xlab="SciClone mean exp diff", ylab="TrackSig mean exp diff", xlim=c(0, 0.5), ylim=c(0, 0.5))
+dev.off()
+
+xlim=c(0, 0.25)
+ylim=c(0, 0.25)
+
+sim_order <- intersect(res_SciClone[,1], res_TrackSig[,1])
+pdf(paste0("TrackSig_vs_SciCLone_simulation_results_median_diff.pdf"), width = 5, height=5)
+plot(res_SciClone[sim_order,]$abs_diff_median, res_TrackSig[sim_order,]$abs_diff_median, 
+   xlab="SciClone median activity diff", ylab="TrackSig median activity diff", xlim=xlim, ylim=ylim)
+abline(0,1) # add a diagonal line
+dev.off()
+
+print("Median activity error")
+print(mean(res_TrackSig[sim_order,]$abs_diff_median))
+
+
+for (d_type in depth_types) {
+  idx <- grepl(paste0(d_type,"$"), sapply(res_TrackSig[,1],toString))
+
+  pdf(paste0("TrackSig_vs_SciCLone_simulation_results_median_diff_", d_type, ".pdf"), width = 5, height=5)
+  plot(res_SciClone[sim_order,][idx,]$abs_diff_median, res_TrackSig[sim_order,][idx,]$abs_diff_median, 
+     xlab="SciClone median activity diff", ylab="TrackSig median activity diff", xlim=xlim, ylim=ylim)
+  dev.off()
+}
+
+
 
 
 # ===========================================
@@ -354,11 +411,13 @@ COLORS <- c("#F3766E", "#1FBFC3", "#C280F5")  #"#7CAA1F")
 for (d_type in depth_types) { 
   pdf(paste0("cp_comparison_barplot_", d_type, ".pdf"), width = 7, height=5)
   par(mar=c(6.1, 4.1, 6.1, 2.1))
+  bar_names <- gsub(" plus", "", gsub("_", " ", colnames(res[[d_type]])))
   barplot(as.matrix(res[[d_type]]), beside=T,
                  col=COLORS[1:nrow(res[[d_type]])],
-                 names.arg= gsub("_", " ", colnames(res[[d_type]])) ) #las=2)
+                 names.arg= bar_names,
+                 ylab = "% simulations with correct number of CP") #las=2)
   legend("topright", inset=c(0,-0.5), xpd=TRUE,  bty="n",
-       legend = c("TrackSig", "SciClone binomial.bmm", "SciClone bmm (default)"),
+       legend = c("TrackSig", "Oracle", "SciClone (default parameters)"),
        fill = COLORS[(1:nrow(res[[d_type]]))] )
   dev.off()
 }
@@ -378,7 +437,7 @@ tracksig_dir = "TS_results_signature_trajectories/"
 bin_sizes <- c(25, 50, 75, 100, 150, 200, 300, 500)
 
 bin_size_results_kl <- c()
-bin_size_results_mean_diff <- c()
+bin_size_results_median_diff <- c()
 bin_size_results_max_diff <- c()
 
 for (bin_size in bin_sizes){
@@ -392,7 +451,7 @@ for (bin_size in bin_sizes){
       res_file_name = sprintf("TrackSig_simulation_results_post%d.txt", bin_size))
 
   bin_size_results_kl <- rbind(bin_size_results_kl, data.frame(bin_size=bin_size, metric=mean(res$kl)))
-  bin_size_results_mean_diff <- rbind(bin_size_results_mean_diff, data.frame(bin_size=bin_size, metric=mean(res$abs_diff_mean)))
+  bin_size_results_median_diff <- rbind(bin_size_results_median_diff, data.frame(bin_size=bin_size, metric=mean(res$abs_diff_median)))
   bin_size_results_max_diff <- rbind(bin_size_results_max_diff, data.frame(bin_size=bin_size, metric=mean(res$abs_diff_max)))
 
   # pdf(sprintf("TrackSig_KL_post%d.pdf", bin_size), width = 5, height=5)
@@ -421,19 +480,19 @@ for (bin_size in bin_sizes){
 
 
 print(bin_size_results_kl)
-print(bin_size_results_mean_diff)
+print(bin_size_results_median_diff)
 print(bin_size_results_max_diff)
 
 
 pdf("TrackSig_bin_size_vs_KL.pdf", width = 5, height=5)
 plot(bin_size_results_kl$bin_size, bin_size_results_kl$metric, 
-  main="", xlab="bin size", ylab="KL", pch=19)
+  main="", xlab="Bin size", ylab="KL divergence", pch=19)
 dev.off()
 
 
-pdf("TrackSig_bin_size_vs_mean_diff.pdf", width = 5, height=5)
-plot(bin_size_results_mean_diff$bin_size, bin_size_results_mean_diff$metric, 
-  main="", xlab="bin size", ylab="mean activity diff", pch=19)
+pdf("TrackSig_bin_size_vs_median_diff.pdf", width = 5, height=5)
+plot(bin_size_results_median_diff$bin_size, bin_size_results_median_diff$metric, 
+  main="", xlab="Bin size", ylab="median activity diff", pch=19)
 dev.off()
 
 

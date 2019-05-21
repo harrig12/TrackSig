@@ -70,6 +70,7 @@ compare_simulation_results  <- function(simulation_list,
 
     d <- data.frame(sim = sim,
       abs_diff_mean = mean(unlist(abs_diff), na.rm=TRUE),
+      abs_diff_median = median(unlist(abs_diff), na.rm=TRUE),
       abs_diff_max = max(unlist(abs_diff), na.rm=TRUE),
       kl = mean(kldiv_multinomials(gt_exposures_d, estim_exposures_d_eps), na.rm=TRUE),
       sim_type = sim_type,
