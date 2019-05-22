@@ -1,0 +1,86 @@
+---
+title: Various Simulations with TrackSig
+author: Cait Harrigan
+date: April 2019
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+bibliography: trackSigRef.bibtex
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Package TrackSig
+
+The TrackSig R package was created based off the work described in Rubanova et. al [^1] , and various simulations were created to demonstate its performance in a variety of contexts, with a range of hyperparameter settings. The code to generate and test these simulations is replicated here, and can be run as a few self-contained scripts, as available on [github](https://github.com/harrig12/TrackSig/tree/simulations) (simulations branch)
+
+## Set Up
+
+### Dependencies:
+
+#### R Packages:
+* [TrackSig](https://github.com/harrig12/BCB430)
+* reshape2 
+* ggplot2
+* NMF
+  
+#### System:
+* Python >= Python 2.7.9
+* hg19 human autosome .fa files 
+  
+The TrackSig packages also asks for Perl >= v5.18.2 however, this is not required for the simulations described here. 
+
+## Generate simulaitons and run TrackSig
+
+This section requires about 0.16 MB of storage (including all PDF output) and 2 hours (depending on how parallelization is performed).
+
+Run the script `sim_pipeline.RK` with no arguments from the base directory. This script will:
+ * Create simulated tumour data 
+ * Run TrackSig on the simulations with varying read depth values and all other hyper-parameters set to default
+ * Run TrackSig on the simulations with varying bin-size values and all other hyper-parameters set to default
+
+## Comparison with other Packages
+
+## Set Up
+
+### Dependencies:
+
+#### R Packages:
+* [TrackSig](https://github.com/harrig12/BCB430)
+* SciClone
+* deconstrucSigs 
+* tidyr
+
+### Run SciClone[^2] + deconstructSigs[^3] pipeline
+
+This section requires about 0.42 MB of storage (including all PDF output) and 1.5 hours (depending on how parallelization is performed). This must be run after `sim_pipeline.R` as the simulations these packages work on are generated in the previous step.
+
+Run the script `sciClone_deconstructSigs_pipeline.R` with no arguments from the base directory. This script will:
+
+ * Import simulated tumour data 
+ * Run sciClone on the simulations with the method `binomial.bmm`
+ * Run deconstructSigs on each cluster found by sciClone
+ 
+### Compare step
+
+This section must be run after `sim_pipeline.R` and `sciClone_deconstructSigs_pipeline.R` as this script is designed to compare their output. 
+
+Run the script `compare_simulations.R` with no arguments from the base directory. This script will:
+
+ * Compare TrackSig signature exposure and changepoint placement results to ground truth 
+ * Compare SciClone + deconstructSig signature exposure and changepoint placement results to ground truth
+ * Compare SciClone + deconstructSig signature exposure and changepoint placement  results to TrackSig signature exposure and changepoint placement results
+
+## References
+
+[^1]: Rubanova, Yulia, Ruian Shi, Roujia Li, Jeff Wintersinger, Nil Sahin, Amit Deshwar, PCAWG-11 working Group, and Quaid Morris. 2018. “TrackSig: Reconstructing Evolutionary Trajectories of Mutation Signature Exposure.” bioRxiv (PREPRINT) (March 2018). https://doi.org/10.1101/260471.
+
+[^2]: Miller, C.A., White, B.S., Dees, N.D., Griffith, M., Welch, J.S., Griffith, O.L., Vij, R., Tomasson, M.H., Graubert, T.A., Walter, M.J., et al. (2014). SciClone: Inferring Clonal Architecture and Tracking the Spatial and Temporal Patterns of Tumor Evolution. PLoS Computational Biology 10, e1003665.
+
+
+[^3]: Rosenthal, R., McGranahan, N., Herrero, J., Taylor, B.S., and Swanton, C. (2016). deconstructSigs: delineating mutational processes in single tumors distinguishes DNA repair deficiencies and patterns of carcinoma evolution. Genome Biology 17, 31.
+
