@@ -7,7 +7,7 @@ Cell processes leave a unique signature of mutation types in cancer genome. Usin
 ## See also the TrackSig [R package repo](https://github.com/harrig12/BCB430)
 
 ## Usage 
-A brief overview page for generating simulated data and testing the performance of TrackSig, as well as comparing it to a pipeline of other packages (SciClone and deconstructSigs) is made available [here](LINK!). This page assumes some familiarity with the TrackSig packages and design principles. To familiarize yourself in depth, the TrackSig paper (Rubanova et. al) is [available on BioRxive](LINK!)
+A brief overview page for generating simulated data and testing the performance of TrackSig, as well as comparing it to a pipeline of other packages (SciClone and deconstructSigs) is made available [here](https://harrig12.github.io/TrackSig/). This page assumes some familiarity with the TrackSig packages and design principles. To familiarize yourself in depth, the TrackSig paper (Rubanova et. al) is [available on bioRxiv](https://www.biorxiv.org/content/10.1101/260471v3)
 
 ## Important notes
 1) **Is not applicable for samples with <600 mutations.** Please note that Trackature does not run on samples with less than 600 mutations. Less than 600 mutations will result in less than 3 time points, and there is no point to analize it as a time series. On tumors with less than 600 mutations, you can compute signature activities without dividing mutations into time points (see "Computing overall signature activities" section).
