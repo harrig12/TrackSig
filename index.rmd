@@ -6,7 +6,6 @@ output:
   prettydoc::html_pretty:
     theme: cayman
     highlight: github
-bibliography: trackSigRef.bibtex
 ---
 
 
