@@ -173,7 +173,7 @@ TrackSig.options(purity_file = "~/Desktop/pcawg/annotation/sim_purity.txt",
                  cancer_type_signatures = FALSE,
                  pcawg_format = TRUE,
                  DIR_RESULTS = "simulation_results/",
-                 pelt_penalty = expression(60),
+                 pelt_penalty = expression(0),
                  pelt_score_fxn = TrackSig:::gaussian_ll)
 
 # load annotation
@@ -190,12 +190,12 @@ list[alex, tumortypes, active_signatures, active_signatures.our_samples] <- Trac
 
 
 #run_simulation(simnames[5], "simulations_data")
-loadAndScoreIt_pcawg(simnames[5], "~/Desktop/pcawg/simulations_data/counts/")
+loadAndScoreIt_pcawg(simnames[5], "~/Desktop/pcawg/simulations_data/counts/", tumortypes)
 
 
 
-a <- as.numeric(read.delim("~/Desktop/pcawg/simulation_results/SIMULATED/neg_LL/phis.txt", header = F, sep = " "))
-length(a)
+#a <- as.numeric(read.delim("~/Desktop/pcawg/simulation_results/SIMULATED/neg_LL/phis.txt", header = F, sep = " "))
+#length(a)
 
 
 
