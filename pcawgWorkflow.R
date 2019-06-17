@@ -4,15 +4,15 @@
 # Author: Cait Harrigan
 # June 2019
 
-library(TrackSig)
-library(foreach)
-library(doParallel)
+#library(TrackSig)
+#library(foreach)
+#library(doParallel)
 
 # Remember: unless registerDoMC is called, foreach will not run in parallel. Simply loading the doParallel package is not enough
-registerDoParallel(cores=2)
+#registerDoParallel(cores=2)
 
 # load the provided annotation
-load("~/Desktop/pcawg/annotation/pcawg_annotation.RData")
+#load("~/Desktop/pcawg/annotation/pcawg_annotation.RData")
 
 # conveinent list stuct
 list <- structure(NA,class="result")
@@ -31,10 +31,10 @@ list <- structure(NA,class="result")
 # first attempt: one sample -> function
 # TrackSig::: calles added
 
-TrackSig.options(purity_file = "~/Desktop/pcawg/data/consensus_purity.txt",
-                 DIR_RESULTS = "~/Desktop/pcawg/results/")
+#TrackSig.options(purity_file = "~/Desktop/pcawg/data/consensus_purity.txt",
+#                 DIR_RESULTS = "~/Desktop/pcawg/results/")
 
-countsDir <- "~/Desktop/pcawg/data/counts"
+#countsDir <- "~/Desktop/pcawg/data/counts"
 
 loadAndScoreIt_pcawg <- function(samplename, countsDir = "~/Desktop/pcawg/data/counts", tumortypes) {
 
@@ -138,14 +138,14 @@ loadAndScoreIt_pcawg <- function(samplename, countsDir = "~/Desktop/pcawg/data/c
 
 
 
-# several samples in parallel
-sel <- grep("([^/]*)\\.phi\\.txt", list.files(countsDir))
-sampleNames <- gsub("([^/]*)\\.phi\\.txt","\\1", list.files(countsDir)[sel])
-
-foreach (i=1:length(sampleNames)) %dopar% {
-  sample = sampleNames[i]
-  loadAndScoreIt_pcawg(sample)
-}
+## several samples in parallel
+#sel <- grep("([^/]*)\\.phi\\.txt", list.files(countsDir))
+#sampleNames <- gsub("([^/]*)\\.phi\\.txt","\\1", list.files(countsDir)[sel])
+#
+#foreach (i=1:length(sampleNames)) %dopar% {
+#  sample = sampleNames[i]
+#  loadAndScoreIt_pcawg(sample)
+#}
 
 
 
@@ -159,8 +159,8 @@ library(doParallel)
 # Remember: unless registerDoMC is called, foreach will not run in parallel. Simply loading the doParallel package is not enough
 registerDoParallel(cores=10)
 
-# setwd("~/Desktop/pcawg/)
-# TrackSig:::create_simulation_set()
+#setwd("~/Desktop/pcawg/")
+#TrackSig:::create_simulation_set(outdir = "~/Desktop/pcawg/simulations_data")
 
 # set up
 TrackSig.options(purity_file = "~/Desktop/pcawg/annotation/sim_purity.txt",
@@ -173,29 +173,27 @@ TrackSig.options(purity_file = "~/Desktop/pcawg/annotation/sim_purity.txt",
                  cancer_type_signatures = FALSE,
                  pcawg_format = TRUE,
                  DIR_RESULTS = "simulation_results/",
-                 pelt_penalty = expression(0),
-                 pelt_score_fxn = TrackSig:::gaussian_ll)
+                 pelt_penalty = expression(log(n_bins)),
+                 pelt_score_fxn = TrackSig:::gaussian_ll,
+                 bin_size = 100)
 
 # load annotation
 list[alex, tumortypes, active_signatures, active_signatures.our_samples] <- TrackSig:::load_annotation_pcawg()
 
 # get sim names
 
-#simnames <- list.files("~/Desktop/pcawg/simulations_data/")
-#foreach (i=1:length(simnames)) %dopar% {
-#  simname = simnames[i]
-#  run_simulation(simname, "simulations_data")
-#  loadAndScoreIt_pcawg(simname, "~/Desktop/pcawg/simulations_data/counts/")
-#}
+simnames <- list.files("~/Desktop/pcawg/simulations_data/")
+sel <- grepl("100$", simnames)
+simnames <- simnames[sel]
 
+foreach (i=1:length(simnames)) %dopar% {
+  simname = simnames[i]
+  run_simulation(simname, "simulations_data")
+  loadAndScoreIt_pcawg(simname, "~/Desktop/pcawg/simulations_data/counts/", tumortypes)
+}
 
 #run_simulation(simnames[5], "simulations_data")
-loadAndScoreIt_pcawg(simnames[5], "~/Desktop/pcawg/simulations_data/counts/", tumortypes)
-
-
-
-#a <- as.numeric(read.delim("~/Desktop/pcawg/simulation_results/SIMULATED/neg_LL/phis.txt", header = F, sep = " "))
-#length(a)
+#loadAndScoreIt_pcawg(simnames[5], "~/Desktop/pcawg/simulations_data/counts/", tumortypes)
 
 
 
