@@ -173,8 +173,8 @@ TrackSig.options(purity_file = "~/Desktop/pcawg/annotation/sim_purity.txt",
                  cancer_type_signatures = FALSE,
                  pcawg_format = TRUE,
                  DIR_RESULTS = "simulation_results/",
-                 pelt_penalty = expression(log(n_bins)),
-                 pelt_score_fxn = TrackSig:::gaussian_ll,
+                 pelt_penalty = expression( (n_sigs - 1) * log(n_bins) + log(n_bins) ),
+                 pelt_score_fxn = TrackSig:::sum_gaussian_mixture_multinomials_ll,
                  bin_size = 100)
 
 # load annotation
@@ -196,6 +196,63 @@ foreach (i=1:length(simnames)) %dopar% {
 #loadAndScoreIt_pcawg(simnames[5], "~/Desktop/pcawg/simulations_data/counts/", tumortypes)
 
 
+## compare cp's found
+resDir <- "~/Desktop/pcawg/simulation_results/"
+sim_types <- c()
+sim_cps <- c()
 
+for (sim_dir in list.files("~/Desktop/pcawg/simulation_results/")){
+  sim_types <- c(sim_types, sim_dir)
+  print(sim_types)
+  cps <- c()
+
+  for (sim in list.files(paste0("~/Desktop/pcawg/simulation_results/", sim_dir))){
+
+    print(sim)
+
+    path <- paste0(resDir, sim_dir, "/", sim, "/changepoints.txt")
+    cp <- NA
+    tryCatch(
+      cp <- read.delim(path, header = F, sep = " ", blank.lines.skip = T, skipNul = T)$V1
+      , error = function(e) NULL
+    )
+
+    cps <- c(cps, cp)
+
+  }
+
+  sim_cps[[sim_dir]] <- cps
+}
+
+sims <- c("Simulation_two_clusters1_depth100_bin100",
+"Simulation_two_clusters1_depth100_bin50",
+"Simulation_two_clusters1_depth100_bin80",
+"Simulation_two_clusters10_depth100_bin100",
+"Simulation_two_clusters10_depth100_bin50",
+"Simulation_two_clusters10_depth100_bin80",
+"Simulation_two_clusters2_depth100_bin100",
+"Simulation_two_clusters2_depth100_bin50",
+"Simulation_two_clusters2_depth100_bin80",
+"Simulation_two_clusters3_depth100_bin100",
+"Simulation_two_clusters3_depth100_bin50",
+"Simulation_two_clusters3_depth100_bin80",
+"Simulation_two_clusters4_depth100_bin100",
+"Simulation_two_clusters4_depth100_bin50",
+"Simulation_two_clusters4_depth100_bin80",
+"Simulation_two_clusters5_depth100_bin100",
+"Simulation_two_clusters5_depth100_bin50",
+"Simulation_two_clusters5_depth100_bin80",
+"Simulation_two_clusters6_depth100_bin100",
+"Simulation_two_clusters6_depth100_bin50",
+"Simulation_two_clusters6_depth100_bin80",
+"Simulation_two_clusters7_depth100_bin100",
+"Simulation_two_clusters7_depth100_bin50",
+"Simulation_two_clusters7_depth100_bin80",
+"Simulation_two_clusters8_depth100_bin100",
+"Simulation_two_clusters8_depth100_bin50",
+"Simulation_two_clusters8_depth100_bin80",
+"Simulation_two_clusters9_depth100_bin100",
+"Simulation_two_clusters9_depth100_bin50",
+"Simulation_two_clusters9_depth100_bin80")
 
 # [END]
