@@ -36,17 +36,20 @@ list <- structure(NA,class="result")
 
 #countsDir <- "~/Desktop/pcawg/data/counts"
 
-loadAndScoreIt_pcawg <- function(vcfFile, tumortypes, acronym) {
+loadAndScoreIt_pcawg <- function(vcfFile, cnaFile = NULL, purityFile = NULL, tumortypes, acronym) {
 
 
   # load_sample() returns (inorder)
   # list(vcfData, vcf, phis, quadratic_phis, phis_sliding_window, assigns_phylo_nodes,
   #      assigns_phylo_nodes_sw, acronym, window, tumor_id, phis_for_plot, bootstrap_vcfs, bootstrap_phis))
 
-  vcfFile <- path.expand(vcfFile)
   tumor_id <- strsplit( unlist(strsplit(vcfFile, "/"))[ length( strsplit(vcfFile, "/")[[1]] ) ] , ".vcf")[[1]]
 
-  list[phis, quadPhis, counts] <- vcfToCounts(vcfFile, refGenome = BSgenome.Hsapiens.UCSC.hg19)
+
+  dir.create("intermediateVCAF/", showWarnings = F)
+  list[phis, quadPhis, counts] <- vcfToCounts(vcfFile, cnaFile = cnaFile, purityFile = purityFile,
+                                              refGenome = BSgenome.Hsapiens.UCSC.hg19, saveIntermediate = F,
+                                              intermediateFile = paste0("intermediateVCAF/", tumor_id, "_VCAF.txt"))
 
   # following checking is all from within compute_signatures_for_all_examples()
   # will throw a next error if check fails
@@ -135,11 +138,12 @@ library(BSgenome.Hsapiens.UCSC.hg19.masked)
 library(foreach)
 library(doParallel)
 
-# Remember: unless registerDoMC is called, foreach will not run in parallel. Simply loading the doParallel package is not enough
-registerDoParallel(cores=10)
 
-# setwd("~/Desktop/pcawg/")
-# TrackSig:::create_simulation_set(outdir = "~/Desktop/pcawg/simulation_data")
+# Remember: unless registerDoMC is called, foreach will not run in parallel. Simply loading the doParallel package is not enough
+registerDoParallel(cores=20)
+
+setwd("~/Desktop/pcawg/")
+# TrackSig:::create_simulation_set(outdir = "~/Desktop/pcawg/simulation_data", signature_file = "~/Desktop/pcawg/annotation/sigProfiler_SBS_signatures.txt")
 
 # set up
 TrackSig.options(purity_file = "~/Desktop/pcawg/annotation/sim_purity.txt",
@@ -151,7 +155,7 @@ TrackSig.options(purity_file = "~/Desktop/pcawg/annotation/sim_purity.txt",
                  compute_bootstrap = FALSE,
                  cancer_type_signatures = FALSE,
                  pcawg_format = TRUE,
-                 DIR_RESULTS = "simulation_results/",
+                 DIR_RESULTS = "sigAddSimulation_results/",
                  pelt_penalty = expression( (n_sigs - 1) * log(n_bins) + log(n_bins) ),
                  pelt_score_fxn = TrackSig:::sum_gaussian_mixture_multinomials_ll,
                  bin_size = 100)
@@ -162,15 +166,18 @@ list[alex, tumortypes, active_signatures, active_signatures.our_samples] <- Trac
 # get sim names
 
 simnames <- list.files("~/Desktop/pcawg/simulation_data/")
-sel <- grepl("100$", simnames)
-simnames <- simnames[!sel]
+#sel <- grepl("100$", simnames)
+#simnames <- simnames[sel]
 
 foreach (i=1:length(simnames)) %dopar% {
+#foreach (i=1:1) %dopar% {
   simname <-simnames[i]
   #run_simulation(simname, "simulation_data")
   #loadAndScoreIt_simulation(,
   #                          countsDir = "~/Desktop/pcawg/simulation_data/counts/", tumortypes = tumortypes)
   loadAndScoreIt_pcawg(vcfFile = paste0("~/Desktop/pcawg/simulation_data/", simname, "/", simname, ".vcf"),
+                       #cnaFile = "~/Desktop/pcawg/annotation/example_cna.txt",
+                       #purityFile = "~/Desktop/pcawg/annotation/sim_purity.txt",
                        tumortypes = tumortypes, acronym = "SIMULATED")
 
 }
@@ -179,3 +186,4 @@ foreach (i=1:length(simnames)) %dopar% {
 
 
 # [END]
+
