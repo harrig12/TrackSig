@@ -128,9 +128,7 @@ loadAndScoreIt_pcawg <- function(vcfFile, cnaFile = NULL, purityFile = NULL, tum
 
 
 
-##################################################
-# SIMULATION WORKFLOW
-#################################################
+# SIMULATION WORKFLOW ##################################################
 
 reticulate::use_condaenv("tracksig")
 library(TrackSig)
@@ -185,5 +183,4 @@ foreach (i=1:length(simnames)) %dopar% {
 
 
 
-# [END]
-
+# [END] ####
