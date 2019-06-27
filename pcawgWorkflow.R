@@ -266,39 +266,5 @@ foreach (i=1:length(simnames)) %dopar% {
 
 
 
-##################################################
-# EXAMPLE.vcf
-#################################################
-
-
-# set up
-
-library(TrackSig)
-reticulate::use_condaenv("tracksig")
-library(BSgenome.Hsapiens.UCSC.hg19)
-
-TrackSig.options(purity_file = system.file("extdata", "example_purity.txt", package = "TrackSig"),
-                 signature_file = "~/Desktop/pcawg/annotation/sigProfiler_SBS_signatures.txt",
-                 #trinucleotide_file = "~/Desktop/pcawg/annotation/trinucleotide.txt",
-                 #active_signatures_file = "~/Desktop/pcawg/annotation/sim_active_in_sample.txt",
-                 tumortype_file = system.file("extdata", "tumortypes.txt", package = "TrackSig"),
-                 sig_amount = "onlyKnownSignatures",
-                 compute_bootstrap = FALSE,
-                 cancer_type_signatures = FALSE,
-                 pcawg_format = TRUE,
-                 DIR_RESULTS = "simulation_results/",
-                 pelt_penalty = expression( (n_sigs - 1) * log(n_bins) + log(n_bins) ),
-                 pelt_score_fxn = TrackSig:::sum_gaussian_mixture_multinomials_ll,
-                 bin_size = 100)
-
-load("~/Desktop/pcawg/annotation/pcawg_annotation.Rdata")
-active_signatures.our_samples$ID[1] <- "example"
-tumortypes <- data.frame(ID = "example", tumor_type = "SIMULATED")
-
-# use pcawg funtion
-
-vcfFile <- system.file("extdata", "example.vcf", package = "TrackSig")
-loadAndScoreIt_pcawg(vcfFile, tumortypes = tumortypes, acronym = "SIMULATED")
-
 
 # [END]
