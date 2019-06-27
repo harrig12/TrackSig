@@ -98,7 +98,7 @@ loadAndScoreIt_pcawg <- function(vcfFile, tumortypes, acronym) {
     n_col <- ifelse(length(changepoints) > 0, length(changepoints), 1)
     write(changepoints, file=paste0(dir_name, "changepoints.txt"), ncolumns=n_col)
   } else {
-    mixtures <- read_mixtures(paste0(dir_name, "mixtures.csv"))
+    mixtures <- TrackSig:::read_mixtures(paste0(dir_name, "mixtures.csv"))
     cp_file = paste0(dir_name, "changepoints.txt")
     if (file.info(cp_file)$size == 1) {
       changepoints <- c()
@@ -214,31 +214,21 @@ loadAndScoreIt_simulation <- function(vcfFile, countsDir, tumortypes, acronym = 
 
 
 
-## several samples in parallel
-#sel <- grep("([^/]*)\\.phi\\.txt", list.files(countsDir))
-#sampleNames <- gsub("([^/]*)\\.phi\\.txt","\\1", list.files(countsDir)[sel])
-#
-#foreach (i=1:length(sampleNames)) %dopar% {
-#  sample = sampleNames[i]
-#  loadAndScoreIt_pcawg(sample)
-#}
-
-
-
 ##################################################
 # SIMULATION WORKFLOW
 #################################################
 
+reticulate::use_condaenv("tracksig")
 library(TrackSig)
-library(BSgenome.Hsapiens.UCSC.hg19)
+library(BSgenome.Hsapiens.UCSC.hg19.masked)
 library(foreach)
 library(doParallel)
 
 # Remember: unless registerDoMC is called, foreach will not run in parallel. Simply loading the doParallel package is not enough
 registerDoParallel(cores=10)
 
-#setwd("~/Desktop/pcawg/")
-#TrackSig:::create_simulation_set(outdir = "~/Desktop/pcawg/simulations_data")
+# setwd("~/Desktop/pcawg/")
+# TrackSig:::create_simulation_set(outdir = "~/Desktop/pcawg/simulation_data")
 
 # set up
 TrackSig.options(purity_file = "~/Desktop/pcawg/annotation/sim_purity.txt",
@@ -260,52 +250,21 @@ list[alex, tumortypes, active_signatures, active_signatures.our_samples] <- Trac
 
 # get sim names
 
-simnames <- list.files("~/Desktop/pcawg/simulations_data/")
+simnames <- list.files("~/Desktop/pcawg/simulation_data/")
 sel <- grepl("100$", simnames)
-simnames <- simnames[sel]
+simnames <- simnames[!sel]
 
-#foreach (i=1:length(simnames)) %dopar% {
-#  simname = simnames[i]
-#  run_simulation(simname, "simulations_data")
-#  loadAndScoreIt_pcawg(simname, "~/Desktop/pcawg/simulations_data/counts/", tumortypes)
-#}
+foreach (i=1:length(simnames)) %dopar% {
+  simname <-simnames[i]
+  #run_simulation(simname, "simulation_data")
+  #loadAndScoreIt_simulation(,
+  #                          countsDir = "~/Desktop/pcawg/simulation_data/counts/", tumortypes = tumortypes)
+  loadAndScoreIt_pcawg(vcfFile = paste0("~/Desktop/pcawg/simulation_data/", simname, "/", simname, ".vcf"),
+                       tumortypes = tumortypes, acronym = "SIMULATED")
 
-loadAndScoreIt_simulation(vcfFile = paste0("~/Desktop/pcawg/simulations_data/", simnames[1], "/", simnames[1], ".vcf"),
-                          countsDir = "~/Desktop/pcawg/simulations_data/counts/", tumortypes = tumortypes)
-
-#run_simulation(simnames[1], "simulations_data")
-#loadAndScoreIt_pcawg(simnames[1], "~/Desktop/pcawg/simulations_data/counts/", tumortypes)
-
-
-## compare cp's found
-resDir <- "~/Desktop/pcawg/simulation_results/"
-sim_types <- c()
-sim_cps <- c()
-
-for (sim_dir in list.files("~/Desktop/pcawg/simulation_results/")){
-  sim_types <- c(sim_types, sim_dir)
-  print(sim_types)
-  cps <- c()
-
-  for (sim in list.files(paste0("~/Desktop/pcawg/simulation_results/", sim_dir))){
-
-    print(sim)
-
-    path <- paste0(resDir, sim_dir, "/", sim, "/changepoints.txt")
-    cp <- NA
-    tryCatch(
-      cp <- read.delim(path, header = F, sep = " ", blank.lines.skip = T, skipNul = T)$V1
-      , error = function(e) NULL
-    )
-
-    cps <- c(cps, cp)
-
-  }
-
-  sim_cps[[sim_dir]] <- cps
 }
 
-#vcfFile <- "~/Desktop/pcawg/data/Simulation_two_clusters4_depth100_bin100/Simulation_two_clusters4_depth100_bin100.vcf"
+
 
 ##################################################
 # EXAMPLE.vcf
@@ -315,6 +274,7 @@ for (sim_dir in list.files("~/Desktop/pcawg/simulation_results/")){
 # set up
 
 library(TrackSig)
+reticulate::use_condaenv("tracksig")
 library(BSgenome.Hsapiens.UCSC.hg19)
 
 TrackSig.options(purity_file = system.file("extdata", "example_purity.txt", package = "TrackSig"),
