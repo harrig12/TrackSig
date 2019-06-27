@@ -4,15 +4,7 @@
 # Author: Cait Harrigan
 # June 2019
 
-#library(TrackSig)
-#library(foreach)
-#library(doParallel)
 
-# Remember: unless registerDoMC is called, foreach will not run in parallel. Simply loading the doParallel package is not enough
-#registerDoParallel(cores=2)
-
-# load the provided annotation
-#load("~/Desktop/pcawg/annotation/pcawg_annotation.RData")
 
 # conveinent list stuct
 list <- structure(NA,class="result")
@@ -27,14 +19,6 @@ list <- structure(NA,class="result")
   x
 }
 
-
-# first attempt: one sample -> function
-# TrackSig::: calles added
-
-#TrackSig.options(purity_file = "~/Desktop/pcawg/data/consensus_purity.txt",
-#                 DIR_RESULTS = "~/Desktop/pcawg/results/")
-
-#countsDir <- "~/Desktop/pcawg/data/counts"
 
 loadAndScoreIt_pcawg <- function(vcfFile, cnaFile = NULL, purityFile = NULL, tumortypes, acronym) {
 
