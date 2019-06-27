@@ -5,7 +5,6 @@
 # June 2019
 
 
-
 # conveinent list stuct
 list <- structure(NA,class="result")
 "[<-.result" <- function(x,...,value) {
@@ -20,7 +19,9 @@ list <- structure(NA,class="result")
 }
 
 
-loadAndScoreIt_pcawg <- function(vcfFile, cnaFile = NULL, purityFile = NULL, tumortypes, acronym) {
+loadAndScoreIt_pcawg <- function(vcfFile, tumortypes, acronym,
+                                 cnaFile = NULL, purityFile = NULL,
+                                 saveIntermediate = F) {
 
 
   # load_sample() returns (inorder)
@@ -29,8 +30,10 @@ loadAndScoreIt_pcawg <- function(vcfFile, cnaFile = NULL, purityFile = NULL, tum
 
   tumor_id <- strsplit( unlist(strsplit(vcfFile, "/"))[ length( strsplit(vcfFile, "/")[[1]] ) ] , ".vcf")[[1]]
 
+  if (saveIntermediate){
+    dir.create("intermediateVCAF/", showWarnings = F)
+  }
 
-  dir.create("intermediateVCAF/", showWarnings = F)
   list[phis, quadPhis, counts] <- vcfToCounts(vcfFile, cnaFile = cnaFile, purityFile = purityFile,
                                               refGenome = BSgenome.Hsapiens.UCSC.hg19, saveIntermediate = F,
                                               intermediateFile = paste0("intermediateVCAF/", tumor_id, "_VCAF.txt"))
@@ -125,7 +128,7 @@ library(doParallel)
 registerDoParallel(cores=20)
 
 setwd("~/Desktop/pcawg/")
-# TrackSig:::create_simulation_set(outdir = "~/Desktop/pcawg/simulation_data", signature_file = "~/Desktop/pcawg/annotation/sigProfiler_SBS_signatures.txt")
+# TrackSig:::create_simulation_set(outdir = "~/Desktop/pcawg/simulation_data")
 
 # set up
 TrackSig.options(purity_file = "~/Desktop/pcawg/annotation/sim_purity.txt",
