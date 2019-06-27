@@ -4,21 +4,6 @@
 # Author: Cait Harrigan
 # June 2019
 
-# SETUP ##############################################################
-
-reticulate::use_condaenv("tracksig")
-library(TrackSig)
-library(BSgenome.Hsapiens.UCSC.hg19.masked)
-library(foreach)
-library(doParallel)
-
-# Remember: unless registerDoMC is called, foreach will not run in parallel. Simply loading the doParallel package is not enough
-registerDoParallel(cores=20)
-
-setwd("~/Desktop/pcawg/")
-TrackSig:::create_simulation_set(outdir = "~/Desktop/pcawg/simulation_data")
-
-
 # DEFS ##############################################################
 
 # conveinent list stuct
@@ -133,6 +118,17 @@ loadAndScoreIt_pcawg <- function(vcfFile, tumortypes, acronym,
 
 # SIMULATION WORKFLOW ##################################################
 
+reticulate::use_condaenv("tracksig")
+library(TrackSig)
+library(BSgenome.Hsapiens.UCSC.hg19.masked)
+library(foreach)
+library(doParallel)
+
+# Remember: unless registerDoMC is called, foreach will not run in parallel. Simply loading the doParallel package is not enough
+registerDoParallel(cores=20)
+
+setwd("~/Desktop/pcawg/")
+#TrackSig:::create_simulation_set(outdir = "~/Desktop/pcawg/simulation_data")
 
 # set up
 TrackSig.options(purity_file = "~/Desktop/pcawg/annotation/sim_purity.txt",
@@ -233,6 +229,37 @@ names(correct) <- NULL
 
 simMeta$correctNcp <- correct
 
+# BOLTZ PCAWG WORKFLOW ##################################################
+
+reticulate::use_condaenv("tracksig")
+library(TrackSig)
+library(BSgenome.Hsapiens.UCSC.hg19.masked)
+library(foreach)
+library(doParallel)
+
+# Remember: unless registerDoMC is called, foreach will not run in parallel. Simply loading the doParallel package is not enough
+registerDoParallel(cores=20)
+
+setwd("~/Desktop/small25/")
+#TrackSig:::create_simulation_set(outdir = "~/Desktop/pcawg/simulation_data")
+
+# set up
+TrackSig.options(purity_file = "~/Desktop/pcawg/annotation/sim_purity.txt",
+                 signature_file = "~/Desktop/pcawg/annotation/sigProfiler_SBS_signatures.txt",
+                 trinucleotide_file = "~/Desktop/pcawg/annotation/trinucleotide.txt",
+                 active_signatures_file = "~/Desktop/pcawg/annotation/sim_active_in_sample.txt",
+                 tumortype_file = "~/Desktop/pcawg/annotation/sim_tumortypes.txt",
+                 sig_amount = "onlyKnownSignatures",
+                 compute_bootstrap = FALSE,
+                 cancer_type_signatures = FALSE,
+                 pcawg_format = TRUE,
+                 DIR_RESULTS = "sigAddSimulation_results/",
+                 pelt_penalty = expression( (n_sigs - 1) * log(n_bins) + log(n_bins) ),
+                 pelt_score_fxn = TrackSig:::sum_gaussian_mixture_multinomials_ll,
+                 bin_size = 100)
+
+# load annotation
+list[alex, tumortypes, active_signatures, active_signatures.our_samples] <- TrackSig:::load_annotation_pcawg()
 
 
 # [END] ####
