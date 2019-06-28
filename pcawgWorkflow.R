@@ -244,22 +244,38 @@ setwd("~/Desktop/small25/")
 #TrackSig:::create_simulation_set(outdir = "~/Desktop/pcawg/simulation_data")
 
 # set up
-TrackSig.options(purity_file = "~/Desktop/pcawg/annotation/sim_purity.txt",
-                 signature_file = "~/Desktop/pcawg/annotation/sigProfiler_SBS_signatures.txt",
-                 trinucleotide_file = "~/Desktop/pcawg/annotation/trinucleotide.txt",
-                 active_signatures_file = "~/Desktop/pcawg/annotation/sim_active_in_sample.txt",
-                 tumortype_file = "~/Desktop/pcawg/annotation/sim_tumortypes.txt",
+TrackSig.options(#purity_file = "~/Desktop/pcawg/annotation/sim_purity.txt",
+                 #signature_file = "~/Desktop/pcawg/annotation/sigProfiler_SBS_signatures.txt",
+                 #trinucleotide_file = "~/Desktop/pcawg/annotation/trinucleotide.txt",
+                 #active_signatures_file = "~/Desktop/pcawg/annotation/sim_active_in_sample.txt",
+                 #tumortype_file = "~/Desktop/pcawg/annotation/sim_tumortypes.txt",
                  sig_amount = "onlyKnownSignatures",
                  compute_bootstrap = FALSE,
                  cancer_type_signatures = FALSE,
                  pcawg_format = TRUE,
-                 DIR_RESULTS = "sigAddSimulation_results/",
-                 pelt_penalty = expression( (n_sigs - 1) * log(n_bins) + log(n_bins) ),
+                 DIR_RESULTS = "results/",
+                 pelt_penalty = expression( (n_sigs + 1) * log(n_bins)),
                  pelt_score_fxn = TrackSig:::sum_gaussian_mixture_multinomials_ll,
                  bin_size = 100)
 
 # load annotation
-list[alex, tumortypes, active_signatures, active_signatures.our_samples] <- TrackSig:::load_annotation_pcawg()
+load("~/Desktop/Yulia_current0519/annotation_data.pcawg_sigs.sigProfiler.RData")
+
+simnames <- list.files("./data")
+
+
+foreach (i=1:length(simnames)) %dopar% {
+#foreach (i=1:1) %dopar% {
+
+  simname <-simnames[i]
+
+  loadAndScoreIt_pcawg(vcfFile = paste0("~/Desktop/small25/data/", simname),
+                       #cnaFile = "~/Desktop/pcawg/annotation/example_cna.txt",
+                       #purityFile = "~/Desktop/pcawg/annotation/sim_purity.txt",
+                       tumortypes = tumortypes, acronym = "SIMULATED")
+
+}
+
 
 
 # [END] ####
