@@ -1,4 +1,4 @@
-# pcawgWorkflow.R
+c# pcawgWorkflow.R
 
 # Code to use TrackSig R package with real pcawg counts data.
 # Author: Cait Harrigan
@@ -20,8 +20,6 @@ list <- structure(NA,class="result")
 }
 
 
-
-
 # SIMULATION WORKFLOW ##################################################
 
 reticulate::use_condaenv("tracksig")
@@ -29,25 +27,26 @@ library(TrackSig)
 library(BSgenome.Hsapiens.UCSC.hg19.masked)
 library(foreach)
 library(doParallel)
+library(ggplot2)
 
 # Remember: unless registerDoMC is called, foreach will not run in parallel. Simply loading the doParallel package is not enough
 registerDoParallel(cores=20)
 
-setwd("~/Desktop/pcawg/")
-#TrackSig:::create_simulation_set(outdir = "~/Desktop/pcawg/simulation_data")
+setwd("~/Desktop/pcawg_sim/")
+#TrackSig:::create_simulation_set(outdir = path.expand("~/Desktop/pcawg_sim/simulation_data/"))
 
 # set up
-TrackSig.options(purity_file = "~/Desktop/pcawg/annotation/sim_purity.txt",
-                 signature_file = "~/Desktop/pcawg/annotation/sigProfiler_SBS_signatures.txt",
-                 trinucleotide_file = "~/Desktop/pcawg/annotation/trinucleotide.txt",
-                 active_signatures_file = "~/Desktop/pcawg/annotation/sim_active_in_sample.txt",
-                 tumortype_file = "~/Desktop/pcawg/annotation/sim_tumortypes.txt",
+TrackSig.options(purity_file = "~/Desktop/pcawg_sim/annotation/sim_purity.txt",
+                 signature_file = "~/Desktop/pcawg_sim/annotation/sigProfiler_SBS_signatures.txt",
+                 trinucleotide_file = "~/Desktop/pcawg_sim/annotation/trinucleotide.txt",
+                 active_signatures_file = "~/Desktop/pcawg_sim/annotation/sim_active_in_sample.txt",
+                 tumortype_file = "~/Desktop/pcawg_sim/annotation/sim_tumortypes.txt",
                  sig_amount = "onlyKnownSignatures",
                  compute_bootstrap = FALSE,
                  cancer_type_signatures = FALSE,
                  pcawg_format = TRUE,
-                 DIR_RESULTS = "sigAddSimulation_results/",
-                 pelt_penalty = expression( (n_sigs - 1) * log(n_bins) + log(n_bins) ),
+                 DIR_RESULTS = "og_results/",
+                 pelt_penalty = expression( (n_sigs + 1) * log(n_bins)),
                  pelt_score_fxn = TrackSig:::sum_gaussian_mixture_multinomials_ll,
                  bin_size = 100)
 
@@ -56,20 +55,18 @@ list[alex, tumortypes, active_signatures, active_signatures.our_samples] <- Trac
 
 # get sim names
 
-simnames <- list.files("~/Desktop/pcawg/simulation_data/")
+simnames <- list.files("~/Desktop/pcawg_sim/simulation_data/")
 #sel <- grepl("100$", simnames)
 #simnames <- simnames[sel]
 
-#foreach (i=1:length(simnames)) %dopar% {
-foreach (i=1:1) %dopar% {
+foreach (i=1:length(simnames)) %dopar% {
+#foreach (i=1:1) %dopar% {
 
   simname <-simnames[i]
-  #run_simulation(simname, "simulation_data")
-  #loadAndScoreIt_simulation(,
-  #                          countsDir = "~/Desktop/pcawg/simulation_data/counts/", tumortypes = tumortypes)
-  loadAndScoreIt_pcawg(vcfFile = paste0("~/Desktop/pcawg/simulation_data/", simname, "/", simname, ".vcf"),
-                       cnaFile = paste0("~/Desktop/pcawg/simulation_data/", simname, "/", simname, "_cna.txt"),
-                       purityFile = "~/Desktop/pcawg/annotation/sim_purity.txt",
+
+  loadAndScoreIt_pcawg(vcfFile = paste0("~/Desktop/pcawg_sim/simulation_data/", simname, "/", simname, ".vcf"),
+                       cnaFile = paste0("~/Desktop/pcawg_sim/simulation_data/", simname, "/", simname, "_cna.txt"),
+                       #purityFile = "~/Desktop/pcawg/annotation/sim_purity.txt",
                        tumortypes = tumortypes, acronym = "SIMULATED")
 
 }
@@ -90,18 +87,19 @@ getSimMeta <- function(dataDir){
   rownames(simUnparsed) <- NULL
   simUnparsed[,1] <- paste0(simUnparsed[,1], simUnparsed[,2], simUnparsed[,3])
   simUnparsed <- simUnparsed[,c(1, 4:7)]
-  colnames(simUnparsed) <- c("type", "depth", "bin", "dist", "sigChange")
+  colnames(simUnparsed) <- c("type", "depth", "bin", "subCloneAt", "sigChange")
   simUnparsed <- data.frame(simUnparsed, stringsAsFactors = F)
 
   # populate the meta df
   simMeta$type <- simUnparsed$type
   simMeta$depth <- as.numeric(unlist(strsplit(simUnparsed$depth, "depth"))[c(F,T)])
   simMeta$bin <- as.numeric(unlist(strsplit(simUnparsed$bin, "bin"))[c(F,T)])
-  simMeta$dist <- as.numeric(unlist(strsplit(simUnparsed$dist, "dist"))[c(F,T)])
+  simMeta$subCloneAt <- as.numeric(unlist(strsplit(simUnparsed$subCloneAt, "subCloneAt"))[c(F,T)])
   simMeta$sigChange <- as.numeric(unlist(strsplit(simUnparsed$sigChange, "sigChange"))[c(F,T)])
 
   return(simMeta)
 }
+
 
 getSimCPs <- function(resultDir, simMeta){
   # pick up the found changepoints and their associated phi
@@ -123,7 +121,7 @@ getSimCPs <- function(resultDir, simMeta){
 }
 
 
-simMeta <- getSimMeta("~/Desktop/sigAddSimulation_results/")
+simMeta <- getSimMeta("~/Desktop/pcawg_sim/simulation_data/")
 
 # ground truth cps's placed exactly between 1.0 and dist. Only fair if
 # variance is equal.
